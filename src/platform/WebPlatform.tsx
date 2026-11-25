@@ -80,6 +80,9 @@ function Shell() {
       resolve: (v: boolean) => void;
     } | null>(null),
     [pulse, setPulse] = useState(0);
+  const [theme, setTheme] = useState<"light" | "dark">(() =>
+    localStorage.getItem("aura_theme") === "dark" ? "dark" : "light",
+  );
   const waiting = useRef<((v: boolean) => void)[]>([]),
     userRef = useRef(user);
   userRef.current = user;
@@ -101,8 +104,20 @@ function Shell() {
     return () => removeEventListener("popstate", f);
   }, []);
   useEffect(() => {
-    localStorage.setItem("aura_shared_cart", JSON.stringify(cart));
+    try {
+      localStorage.setItem("aura_shared_cart", JSON.stringify(cart));
+    } catch {
+      /* Keep the current basket usable when browser storage is blocked. */
+    }
   }, [cart]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem("aura_theme", theme);
+    } catch {
+      /* Keep the selected theme for this session if storage is unavailable. */
+    }
+  }, [theme]);
   useEffect(() => {
     if (toast) {
       const t = setTimeout(() => setToast(""), 4500);
@@ -285,9 +300,11 @@ function Shell() {
         saved,
         toggleSaved,
         openChat,
+        theme,
+        setTheme,
       }}
     >
-      <div className="a-shell">
+      <div className="a-shell" data-theme={theme}>
         <header className="a-header">
           <button className="a-logo" onClick={() => go("/")}>
             <img

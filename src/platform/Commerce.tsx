@@ -234,11 +234,15 @@ export function CartSheet({
           lines={checkout.lines}
           merchant={checkout.merchant}
           onClose={() => setCheckout(null)}
-          onPlaced={() => {
+          onPlaced={(orderId) => {
             setCart((old) => old.filter((l) => !checkout.lines.includes(l)));
             setCheckout(null);
             onClose();
-            go("/orders");
+            go(
+              orderId
+                ? "/orders?order=" + encodeURIComponent(orderId)
+                : "/orders",
+            );
           }}
         />
       )}
@@ -256,7 +260,7 @@ export function Checkout({
   lines: Line[];
   merchant: Row;
   onClose: () => void;
-  onPlaced: () => void;
+  onPlaced: (orderId?: string) => void;
   liveId?: string;
   network?: string;
 }) {
@@ -272,8 +276,7 @@ export function Checkout({
       coords: null,
     }),
     [mode, setMode] = useState(
-      kind === "food" &&
-        sessionStorage.getItem("aura_dining_merchant") === merchant.id
+      kind === "food" && !!rememberedTable(merchant.id)
         ? "dine-in"
         : "delivery",
     ),
@@ -355,7 +358,7 @@ export function Checkout({
     setBusy(true);
     setError(null);
     try {
-      await command("/v1/me/delivery", details);
+      if (mode === "delivery") await command("/v1/me/delivery", details);
       pending.current ??= {
         key: crypto.randomUUID(),
         body: {
@@ -380,7 +383,7 @@ export function Checkout({
       setUncertain(false);
       toast("Order submitted. You can track it in Orders.");
       if (liveId) go("/live-payments/" + (result.order?.id ?? result.id));
-      onPlaced();
+      onPlaced(result.order?.id ?? result.id);
     } catch (e: any) {
       setError(friendly(e));
       if (e.status && e.status < 500) {
@@ -431,7 +434,7 @@ export function Checkout({
           </>
         ) : null}
       </section>
-      <fieldset disabled={busy || uncertain || saved.loading}>
+      <fieldset disabled={busy || uncertain}>
         <Select
           label="How are we serving you?"
           value={mode}
@@ -452,6 +455,7 @@ export function Checkout({
             <input
               required
               maxLength={100}
+              autoComplete="name"
               value={details.name}
               onChange={(e) => {
                 edited.current = true;
@@ -462,6 +466,8 @@ export function Checkout({
           <Field label="Phone number">
             <input
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               required
               maxLength={25}
               value={details.phone}
@@ -737,7 +743,7 @@ export function OrderDetail({
             {o.orderType === "food" ? "YOUR KITCHEN" : "YOUR SHOP"}
           </span>
           <h2>{o.restaurantName}</h2>
-          <div className="a-card">
+          <div className="a-card" role="status" aria-live="polite">
             <h3>
               {o.status === "received"
                 ? `Waiting for ${o.orderType === "food" ? "kitchen" : "shop"} confirmation`

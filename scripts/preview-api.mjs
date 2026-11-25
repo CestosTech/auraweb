@@ -86,7 +86,21 @@ createServer((req, res) => {
   }
   const path = new URL(req.url, "http://local").pathname;
   let data;
-  if (path.startsWith("/v1/catalog/"))
+  if (path === "/v1/dining/preview-kitchen/t1")
+    data = {
+      restaurant: {
+        ...shops[0],
+        isOpen: true,
+        cuisine: "Local favourites",
+        diningTables: [
+          { id: "t1", name: "Table 4", area: "Garden", active: true },
+        ],
+      },
+      table: { id: "t1", name: "Table 4", area: "Garden" },
+      items,
+      nextPageToken: null,
+    };
+  else if (path.startsWith("/v1/catalog/"))
     data = {
       items: /restaurants|supermarkets$/.test(path) ? shops : items,
       nextPageToken: null,

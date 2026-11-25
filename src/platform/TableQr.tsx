@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRemote } from "./hooks";
-import { Dialog, Notice, Busy } from "./ui";
+import { Dialog, Notice, Busy, Button } from "./ui";
 export function TableQr({
   merchantId,
   tableId,
@@ -16,9 +16,54 @@ export function TableQr({
     0,
     false,
   );
+  const [copied, setCopied] = useState(false),
+    [copyError, setCopyError] = useState<string | null>(null);
+  const serverUrl = qr.data?.url;
+  let url = new URL(
+    `/dine/${encodeURIComponent(merchantId)}/${encodeURIComponent(tableId)}`,
+    location.origin,
+  ).href;
+  try {
+    if (
+      typeof serverUrl === "string" &&
+      new URL(serverUrl).protocol === "https:"
+    )
+      url = serverUrl;
+  } catch {}
   return (
     <Dialog title="Table QR code" onClose={onClose}>
-      <Notice error={qr.error} retry={qr.reload} />
+      <Notice
+        error={
+          qr.error
+            ? "Could not verify this table right now. Check the link before printing."
+            : null
+        }
+        retry={qr.reload}
+      />
+      <label className="a-field">
+        <span>Table web link</span>
+        <input
+          aria-label="Table web link"
+          readOnly
+          value={url}
+          onFocus={(e) => e.target.select()}
+        />
+      </label>
+      <Button
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(url);
+            setCopied(true);
+            setCopyError(null);
+          } catch {
+            setCopyError("Select the link above to copy it manually.");
+          }
+        }}
+      >
+        {copied ? "Copied" : "Copy table link"}
+      </Button>
+      <Notice error={copyError} />
+      <p>Use this link with your own QR design. No app download is required.</p>
       {qr.loading ? (
         <Busy />
       ) : (
@@ -41,9 +86,7 @@ export function TableQr({
               Scan, choose your food and order. This table is included
               automatically.
             </p>
-            <p>
-              <a href={qr.data.url}>{qr.data.url}</a>
-            </p>
+
             <a
               className="a-button"
               download={`Aura-table-${tableId}.svg`}

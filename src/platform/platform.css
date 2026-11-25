@@ -9,6 +9,85 @@
   color: var(--ink);
   font-family: Inter, "Plus Jakarta Sans", system-ui, sans-serif;
 }
+.a-shell[data-theme="dark"] {
+  --ink: #f1f4f2;
+  --muted: #a2aca6;
+  --green: #47d18c;
+  --mint: #173a2a;
+  --line: #303a34;
+  background: #0e1110;
+  color: var(--ink);
+  color-scheme: dark;
+}
+.a-shell[data-theme="dark"] .a-header,
+.a-shell[data-theme="dark"] .a-bottom-tabs,
+.a-shell[data-theme="dark"] .a-dialog > footer {
+  background: #151a17;
+  border-color: #303a34;
+}
+.a-shell[data-theme="dark"] .a-card,
+.a-shell[data-theme="dark"] .a-product,
+.a-shell[data-theme="dark"] .a-list-card,
+.a-shell[data-theme="dark"] .a-order-card,
+.a-shell[data-theme="dark"] .a-dialog,
+.a-shell[data-theme="dark"] .a-dialog-body,
+.a-shell[data-theme="dark"] .a-dialog > footer,
+.a-shell[data-theme="dark"] .a-field input,
+.a-shell[data-theme="dark"] .a-field textarea,
+.a-shell[data-theme="dark"] .a-field select,
+.a-shell[data-theme="dark"] .a-catalog-top input,
+.a-shell[data-theme="dark"] .a-search,
+.a-shell[data-theme="dark"] .a-icon,
+.a-shell[data-theme="dark"] .a-chips button,
+.a-shell[data-theme="dark"] .a-tabs > button:not(.a-button),
+.a-shell[data-theme="dark"] .a-field > span:first-child {
+  background-color: #1b211e;
+  border-color: #303a34;
+  color: var(--ink);
+}
+.a-shell[data-theme="dark"] .a-product-body,
+.a-shell[data-theme="dark"] .a-dialog,
+.a-shell[data-theme="dark"] .a-dialog input,
+.a-shell[data-theme="dark"] .a-dialog textarea,
+.a-shell[data-theme="dark"] .a-dialog select {
+  color: var(--ink);
+}
+.a-shell[data-theme="dark"] .a-button.secondary {
+  background: #202823;
+  color: var(--ink);
+  border-color: #3a453e;
+}
+.a-shell[data-theme="dark"] .a-price del,
+.a-shell[data-theme="dark"] .a-product small,
+.a-shell[data-theme="dark"] .a-muted,
+.a-shell[data-theme="dark"] .a-field > span:first-child {
+  color: var(--muted);
+}
+.a-shell[data-theme="dark"] .a-chips button.active,
+.a-shell[data-theme="dark"] .a-tabs > .active,
+.a-shell[data-theme="dark"] .a-bottom-tabs button.active {
+  background: #254832;
+  color: #f1fff6;
+}
+.a-shell[data-theme="dark"] .a-icon svg,
+.a-shell[data-theme="dark"] .a-bottom-tabs svg {
+  color: #d7e3dc;
+}
+html[data-theme="dark"] .a-dialog {
+  background: #151a17;
+  color: #f1f4f2;
+}
+html[data-theme="dark"] .a-dialog > footer {
+  background: #151a17;
+  border-color: #303a34;
+}
+html[data-theme="dark"] .a-dialog input,
+html[data-theme="dark"] .a-dialog textarea,
+html[data-theme="dark"] .a-dialog select {
+  background: #1b211e;
+  border-color: #303a34;
+  color: #f1f4f2;
+}
 html,
 body,
 .a-shell,
@@ -808,6 +887,47 @@ button.a-card .a-text-link {
   font-size: 10px;
   letter-spacing: 1px;
 }
+.a-merchant-card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  min-width: 250px;
+  min-height: 230px;
+  border-radius: 22px;
+  background: #213d2b;
+  color: white;
+  text-align: left;
+  scroll-snap-align: start;
+}
+.a-merchant-card > img,
+.a-merchant-card > .a-photo-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.a-merchant-card:after {
+  content: "";
+  position: absolute;
+  inset: 25% 0 0;
+  background: linear-gradient(transparent, #08110de8);
+}
+.a-merchant-copy {
+  position: absolute;
+  z-index: 1;
+  inset: auto 16px 15px;
+  display: grid;
+  gap: 5px;
+}
+.a-merchant-copy span,
+.a-merchant-copy small { color: #e0ebe3; font-size: 12px; }
+.a-merchant-copy strong { color: white; font-size: 18px; }
+.a-merchant-copy em { display: inline-flex; align-items: center; gap: 5px; color: white; font-size: 12px; font-style: normal; font-weight: 700; }
+.a-merchant-card.compact { min-width: 270px; min-height: 122px; }
+.a-merchant-card.compact .a-merchant-copy { inset: auto 14px 12px; gap: 3px; }
+.a-merchant-card.compact .a-merchant-copy strong { font-size: 15px; }
+.a-merchant-card.compact .a-merchant-copy small { display: none; }
 .a-section {
   margin: 30px 0;
 }

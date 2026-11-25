@@ -1,3 +1,5 @@
+import { TableQr } from "./TableQr";
+import { rememberTable, forgetTable } from "./dining-session";
 import { Dining, rememberedTable } from "./Dining";
 import { Social } from "./Social";
 import React from "react";
@@ -76,6 +78,8 @@ const apiState = {
   saved: new Set<string>(),
   toggleSaved: vi.fn(),
   openChat: vi.fn(),
+  theme: "light" as const,
+  setTheme: vi.fn(),
 };
 const wrap = (node: React.ReactNode) =>
   render(<Platform.Provider value={apiState}>{node}</Platform.Provider>);
@@ -99,6 +103,8 @@ beforeEach(() => {
   fixture.command.mockReset();
   fixture.put.mockReset().mockResolvedValue(undefined);
   localStorage.clear();
+  sessionStorage.clear();
+  forgetTable();
   history.replaceState({}, "", "/");
   fixture.command.mockImplementation(async (path: string) => {
     if (path === "/v1/me/delivery")
@@ -643,4 +649,362 @@ it("table QR entry preserves the exact table for checkout without requesting GPS
     ),
   ).toBeTruthy();
   sessionStorage.clear();
+});
+
+it.each([true, false])(
+  "public social discovery does not require login (events=%s)",
+  async (events) => {
+    fixture.user = null;
+    fixture.auth.currentUser = null;
+    apiState.requireLogin.mockClear();
+    const base = events ? "/v1/events" : "/v1/community";
+    fixture.command.mockResolvedValue({
+      items: [
+        {
+          id: "public-one",
+          title: "Neighbourhood gathering",
+          description: "Useful local information",
+          category: "Community",
+          status: "approved",
+          images: [],
+        },
+      ],
+    });
+    wrap(<Social events={events} />);
+    await screen.findByText("Neighbourhood gathering");
+    expect(fixture.command).toHaveBeenCalledWith(
+      base,
+      undefined,
+      undefined,
+      false,
+    );
+    expect(apiState.requireLogin).not.toHaveBeenCalled();
+    expect(
+      fixture.command.mock.calls.some(
+        ([path]) =>
+          String(path).endsWith("/mine") || String(path).endsWith("/saved"),
+      ),
+    ).toBe(false);
+  },
+);
+it.each([true, false])(
+  "public social details and comments do not require login (events=%s)",
+  async (events) => {
+    fixture.user = null;
+    fixture.auth.currentUser = null;
+    apiState.requireLogin.mockClear();
+    const base = events ? "/v1/events" : "/v1/community";
+    fixture.command.mockImplementation(async (path: string) =>
+      path === base + "/public-one"
+        ? {
+            item: {
+              id: "public-one",
+              title: "Neighbourhood gathering",
+              description: "Useful local information",
+              category: "Community",
+              status: "approved",
+              images: [],
+              startsAt: 1800000000000,
+              endsAt: 1800007200000,
+              registrationMode: "form",
+              fields: [],
+            },
+          }
+        : { items: [] },
+    );
+    wrap(<Social events={events} id="public-one" />);
+    await screen.findByRole("heading", { name: "Neighbourhood gathering" });
+    await waitFor(() =>
+      expect(fixture.command).toHaveBeenCalledWith(
+        base + "/public-one/comments",
+        undefined,
+        undefined,
+        false,
+      ),
+    );
+    expect(fixture.command).toHaveBeenCalledWith(
+      base + "/public-one",
+      undefined,
+      undefined,
+      false,
+    );
+    expect(apiState.requireLogin).not.toHaveBeenCalled();
+    expect(
+      fixture.command.mock.calls.some(([path]) =>
+        String(path).endsWith("/state"),
+      ),
+    ).toBe(false);
+  },
+);
+
+it("table QR browser ordering survives sign-in and opens the exact new order", async () => {
+  fixture.user = null;
+  fixture.auth.currentUser = null;
+  history.replaceState({}, "", "/dine/k/t1");
+  const restaurant = {
+    id: "k",
+    name: "Garden Kitchen",
+    isOpen: true,
+    diningTables: [{ id: "t1", name: "Table 4", area: "Garden", active: true }],
+  };
+  let status = "received";
+  fixture.command.mockImplementation(async (path: string, body: any) => {
+    if (path === "/v1/dining/k/t1")
+      return {
+        restaurant,
+        table: restaurant.diningTables[0],
+        items: [
+          {
+            id: "rice",
+            name: "QR Rice",
+            price: 5,
+            restaurantId: "k",
+            category: "Lunch",
+            isAvailable: true,
+          },
+        ],
+        nextPageToken: null,
+      };
+    if (path === "/v1/order-quotes")
+      return {
+        quote: {
+          amountMinor: 500,
+          total: 5,
+          subtotal: 5,
+          deliveryFee: 0,
+          tax: 0,
+        },
+      };
+    if (path === "/v1/me/delivery")
+      return {
+        details: {
+          name: "Test Buyer",
+          phone: "+231770000000",
+          address: "Saved home address",
+          area: "Sinkor",
+          coords: { lat: 6.3, lng: -10.8 },
+        },
+      };
+    if (path === "/v1/orders" && body) return { order: { id: "qr-order" } };
+    if (path === "/v1/orders/qr-order")
+      return {
+        order: {
+          id: "qr-order",
+          restaurantName: "Garden Kitchen",
+          status,
+          diningMode: "dine-in",
+          orderType: "food",
+          diningTable: restaurant.diningTables[0],
+          items: [],
+          total: 5,
+        },
+      };
+    return {
+      items: [],
+      orders: [],
+      events: [],
+      notifications: [],
+      conversations: [],
+    };
+  });
+  const root = render(<WebPlatform />);
+  await userEvent.click(await screen.findByText("QR Rice"));
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Add to basket" }),
+  );
+  expect(screen.queryByRole("dialog", { name: "Test sign in" })).toBeNull();
+  await userEvent.click(
+    screen.getByRole("button", { name: "View your order" }),
+  );
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Continue to checkout" }),
+  );
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Verify test account" }),
+  );
+  root.rerender(<WebPlatform />);
+  await screen.findByRole("heading", { name: "Order summary" });
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Place order · $5" }),
+  );
+  await screen.findByText("Waiting for kitchen confirmation");
+  expect(location.pathname).toBe("/orders");
+  expect(location.search).toBe("?order=qr-order");
+  const sent = fixture.command.mock.calls.find(
+    ([p, b]) => p === "/v1/orders" && b,
+  );
+  expect(sent?.[1]).toMatchObject({
+    merchantId: "k",
+    diningMode: "dine-in",
+    diningTableId: "t1",
+    expectedTotalMinor: 500,
+  });
+  expect(
+    fixture.command.mock.calls.some(([p, b]) => p === "/v1/me/delivery" && b),
+  ).toBe(false);
+  expect(
+    fixture.command.mock.calls.filter(([p]) => p === "/v1/dining/k/t1").length,
+  ).toBe(1);
+  status = "preparing";
+  await screen.findByText(
+    "Kitchen confirmed · Preparing",
+    {},
+    { timeout: 7000 },
+  );
+}, 15000);
+it("expired QR sessions do not silently select dine-in", async () => {
+  sessionStorage.setItem("aura_dining_merchant", "k");
+  sessionStorage.setItem(
+    "aura_table_session",
+    JSON.stringify({ merchantId: "k", tableId: "old", until: Date.now() - 1 }),
+  );
+  fixture.command.mockImplementation(async (p: string) =>
+    p === "/v1/order-quotes"
+      ? { quote: { amountMinor: 500, total: 5 } }
+      : { details: {} },
+  );
+  wrap(
+    <Checkout
+      lines={[
+        {
+          kind: "food",
+          item: { id: "rice", name: "Rice", price: 5, restaurantId: "k" },
+          quantity: 1,
+        },
+      ]}
+      merchant={{ id: "k", name: "Kitchen" }}
+      onClose={() => {}}
+      onPlaced={() => {}}
+    />,
+  );
+  expect(
+    await screen.findByRole("button", { name: "How are we serving you?" }),
+  ).toHaveProperty("textContent", expect.stringContaining("Delivery"));
+});
+it("QR table selection remains usable when Safari browser storage is blocked", () => {
+  const write = vi
+    .spyOn(Storage.prototype, "setItem")
+    .mockImplementation(() => {
+      throw new DOMException("Blocked", "SecurityError");
+    });
+  try {
+    expect(() => rememberTable("k", "t1")).not.toThrow();
+    expect(rememberedTable("k")).toBe("t1");
+    expect(rememberedTable("other")).toBe("");
+  } finally {
+    write.mockRestore();
+    forgetTable();
+  }
+});
+it("QR menu supports search and keeps the browser-first table context visible", async () => {
+  fixture.user = null;
+  fixture.command.mockResolvedValue({
+    restaurant: { id: "k", name: "Kitchen", isOpen: true },
+    table: { id: "t1", name: "Table 4", area: "Garden" },
+    items: [
+      {
+        id: "rice",
+        name: "Rice bowl",
+        price: 5,
+        category: "Lunch",
+        restaurantId: "k",
+      },
+      {
+        id: "coke",
+        name: "Coke",
+        price: 2,
+        category: "Drinks",
+        restaurantId: "k",
+      },
+    ],
+  });
+  wrap(<Dining merchantId="k" tableId="t1" />);
+  await screen.findByText("Rice bowl");
+  await userEvent.type(
+    screen.getByRole("searchbox", { name: "Search this menu" }),
+    "Coke",
+  );
+  expect(screen.queryByText("Rice bowl")).toBeNull();
+  expect(screen.getByText("Coke")).toBeTruthy();
+  expect(
+    screen.getByText("Your table is selected. No app download needed."),
+  ).toBeTruthy();
+  expect(
+    screen.queryByRole("link", { name: /Open in the Aura app/ }),
+  ).toBeNull();
+});
+
+it("invalid table codes never store a table or offer checkout", async () => {
+  fixture.command.mockRejectedValue(
+    Object.assign(new Error("This table code is no longer active."), {
+      status: 409,
+    }),
+  );
+  wrap(<Dining merchantId="k" tableId="inactive" />);
+  await screen.findByText("This table code is no longer active.");
+  expect(rememberedTable("k")).toBe("");
+  expect(screen.queryByRole("button", { name: "View your order" })).toBeNull();
+});
+it("closed kitchens remain browsable but their QR ordering controls are disabled", async () => {
+  fixture.command.mockResolvedValue({
+    restaurant: { id: "k", name: "Closed Kitchen", isOpen: false },
+    table: { id: "t1", name: "Table 4" },
+    items: [
+      {
+        id: "rice",
+        name: "Rice bowl",
+        price: 5,
+        category: "Lunch",
+        restaurantId: "k",
+      },
+    ],
+  });
+  wrap(<Dining merchantId="k" tableId="t1" />);
+  await screen.findByText("Rice bowl");
+  expect(screen.getByRole("button", { name: "Kitchen closed" })).toHaveProperty(
+    "disabled",
+    true,
+  );
+  await userEvent.click(screen.getByText("Rice bowl"));
+  expect(
+    await screen.findByRole("button", { name: "Add to basket" }),
+  ).toHaveProperty("disabled", true);
+});
+it("the deployed Vite host has a direct-link fallback for scanned QR routes", async () => {
+  const { readFileSync } = await import("node:fs");
+  const config = JSON.parse(readFileSync("vercel.json", "utf8"));
+  expect(config.rewrites).toContainEqual({
+    source: "/(.*)",
+    destination: "/index.html",
+  });
+});
+
+it("table QR URL stays visible and copyable when the public API is unavailable", async () => {
+  fixture.user = null;
+  fixture.command.mockRejectedValue(
+    Object.assign(new Error("Sign in first."), { status: 401 }),
+  );
+  const previous = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+  try {
+    wrap(<TableQr merchantId="k" tableId="t1" onClose={() => {}} />);
+    const input = await screen.findByRole("textbox", {
+      name: "Table web link",
+    });
+    const url = new URL("/dine/k/t1", location.origin).href;
+    expect(input).toHaveProperty("value", url);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Copy table link" }),
+    );
+    expect(writeText).toHaveBeenCalledWith(url);
+    await screen.findByRole("button", { name: "Copied" });
+    expect(screen.queryByText("Sign in first.")).toBeNull();
+  } finally {
+    if (previous) Object.defineProperty(navigator, "clipboard", previous);
+    else delete (navigator as any).clipboard;
+  }
 });

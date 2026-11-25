@@ -10,7 +10,7 @@ import { disablePush } from "./Notifications";
 import { Row } from "./model";
 export function Account() {
   const { user, logout } = useAuth(),
-    { requireLogin, toast, confirm } = usePlatform(),
+    { requireLogin, toast, confirm, theme, setTheme } = usePlatform(),
     delivery = useRemote(user ? "/v1/me/delivery" : null),
     preferences = useRemote(user ? "/v1/me/food-preferences" : null),
     [edit, setEdit] = useState(false),
@@ -49,6 +49,17 @@ export function Account() {
     <section className="a-page narrow">
       <h1>Your account</h1>
       <LegalLinks />
+      <section className="a-section a-card">
+        <h3>Appearance</h3>
+        <p>Choose the look that feels right for you.</p>
+        <label className="a-field">
+          <span>Theme</span>
+          <select value={theme} onChange={(e) => setTheme(e.target.value as "light" | "dark")}>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+      </section>
       <div className="a-card">
         <h2>{user?.name || "Welcome to Aura"}</h2>
         <p>{user?.email}</p>

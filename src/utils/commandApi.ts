@@ -1,7 +1,7 @@
 import { auth } from "../firebase/config";
 export function apiBase() {
-  const base = String(import.meta.env.VITE_COMMAND_API_BASE_URL || "").replace(
-    /\/$/,
+  const base = String(import.meta.env.VITE_COMMAND_API_BASE_URL || "").trim().replace(
+    /\/+$/,
     "",
   );
   if (!base)

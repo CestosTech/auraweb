@@ -17,6 +17,8 @@ import {
 import { Gallery } from "./Gallery";
 import { MediaEditor, DateTimeField } from "./EditorFields";
 import { LocationDialog } from "./Location";
+const contentAgreement = { accepted: true, version: "2026-11-24" };
+const publishingRules = "Share useful, accurate information. No offensive or hateful content, harassment, political content or campaigning, sexual content or nudity, alcohol-related content (including promotion or sales), illegal activity, scams or spam. This applies to text, images, videos, links and replies. Only upload material you have permission to share. Violations may be rejected or removed.";
 const date = (n: number) =>
   new Date(n).toLocaleString(undefined, {
     dateStyle: "medium",
@@ -246,6 +248,7 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
     [editing, setEditing] = useState(false),
     [register, setRegister] = useState(false),
     [text, setText] = useState(""),
+    [replyAgreement, setReplyAgreement] = useState(false),
     [error, setError] = useState<string | null>(null),
     [busy, setBusy] = useState(false),
     [attendees, setAttendees] = useState<Row[] | null>(null),
@@ -482,12 +485,14 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
               onChange={(e) => setText(e.target.value)}
             />
           </Field>
+          <p>{publishingRules}</p>
+          <label><input type="checkbox" checked={replyAgreement} onChange={e => setReplyAgreement(e.target.checked)} /> I accept the <a href="/terms" target="_blank" rel="noreferrer">Terms & Community Guidelines</a> and confirm my reply follows them.</label>
           <Button
-            disabled={busy || !text.trim()}
+            disabled={busy || !text.trim() || !replyAgreement}
             onClick={() => {
               if (op.current?.text !== text)
                 op.current = { key: crypto.randomUUID(), text };
-              void act("comments", { text }, op.current.key);
+              void act("comments", { text, contentAgreement }, op.current.key);
             }}
           >
             Post reply
@@ -711,6 +716,7 @@ function SocialEditor({
       ],
       ...item,
     }),
+    [acceptedRules, setAcceptedRules] = useState(false),
     [location, setLocation] = useState(false),
     [busy, setBusy] = useState(false),
     [uploading, setUploading] = useState(false),
@@ -765,7 +771,7 @@ function SocialEditor({
               ? [
                   "Community",
                   "Music",
-                  "Nightlife",
+                  
                   "Business",
                   "Workshop",
                   "Sports",
@@ -960,13 +966,17 @@ function SocialEditor({
         )}
       </fieldset>
       <Notice error={error} />
+      <p>{publishingRules}</p>
+      <label><input type="checkbox" checked={acceptedRules} disabled={busy || uncertain} onChange={e => setAcceptedRules(e.target.checked)} /> I accept the <a href="/terms" target="_blank" rel="noreferrer">Terms & Community Guidelines</a> and confirm this material follows them.</label>
       <Button
         style={{ marginTop: 24 }}
-        disabled={busy || uploading}
+        disabled={busy || uploading || !acceptedRules}
         onClick={async () => {
           setBusy(true);
+          if (!acceptedRules) { setBusy(false); return; }
           pending.current ??= {
             ...data,
+            contentAgreement,
             ...(item ? { expectedVersion: item.version } : {}),
             ...(!events ? { eventId: eventId || item?.eventId || null } : {}),
           };
@@ -1168,6 +1178,7 @@ export function SocialModeration({ onClose }: { onClose: () => void }) {
               pending.current = null;
             }}
           />
+          <aside className="a-list-card"><strong>Publishing rules review</strong><p>{publishingRules}</p><small>{selected.policyAcceptance ? `Policy ${selected.policyAcceptance.version} accepted on ${date(selected.policyAcceptance.acceptedAt)}` : selected.qaOnly ? 'System-generated QA sample' : 'No recorded acceptance — request a new submission.'}</small></aside>
           <Field label="Reason">
             <textarea
               maxLength={1000}
