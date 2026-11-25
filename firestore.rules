@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Open read and write access for Monrovia Food Delivery platform collections
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+    match /restaurants/{restaurantId} {
+      allow read, write: if true;
+      match /{subcollection=**} {
+        allow read, write: if true;
+      }
+    }
+    match /menu/{menuItemId} {
+      allow read, write: if true;
+    }
+    match /menu_items/{menuItemId} {
+      allow read, write: if true;
+    }
+    match /drivers/{driverId} {
+      allow read, write: if true;
+    }
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

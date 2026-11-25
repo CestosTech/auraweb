@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #F8F9FA;
+  color: #111827;
+  padding-top: var(--sat);
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Sleek Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #D1D5DB transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #06C167;
+}
+
+/* Prevent iOS Auto-Zoom on inputs by ensuring base 16px font on small screens */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* iOS Safe Area Padding Utilities */
+.safe-bottom {
+  padding-bottom: calc(1rem + var(--sab));
+}
+
+.safe-bottom-nav {
+  padding-bottom: calc(0.5rem + var(--sab));
+  height: calc(4rem + var(--sab));
+}
+
+.safe-cart-bottom {
+  bottom: calc(4.5rem + var(--sab));
+}
+
+/* Custom scrollbar hiding utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ========================================================================== */
+/* ULTRA-SMOOTH MODAL, BOTTOM SHEET & DRAWER TRANSITION ANIMATIONS           */
+/* ========================================================================== */
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes sheetSlideUpMobile {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dialogPopDesktop {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes drawerSlideRight {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Smooth Backdrop overlay class */
+.animate-overlay-fade {
+  animation: backdropFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, backdrop-filter;
+}
+
+/* Responsive Modal Container: Slides up like native iOS/Android sheet on mobile, zooms smoothly on desktop */
+.animate-modal-sheet {
+  animation: sheetSlideUpMobile 0.34s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@media (min-width: 640px) {
+  .animate-modal-sheet {
+    animation: dialogPopDesktop 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+/* Right side drawer slide animation */
+.animate-drawer-right {
+  animation: drawerSlideRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-dropdown {
+  animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

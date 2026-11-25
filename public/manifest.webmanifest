@@ -1,0 +1,39 @@
+{
+  "id": "/",
+  "name": "Aura Liberia",
+  "short_name": "Aura",
+  "description": "Local kitchens, shopping, homes, rides, live markets and community in one place.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#F8F9FA",
+  "background_color": "#F8F9FA",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
