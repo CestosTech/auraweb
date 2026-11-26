@@ -3,7 +3,7 @@ import { useRemote, friendly } from "./hooks";
 import { usePlatform } from "./context";
 import { command } from "../utils/commandApi";
 import { Row } from "./model";
-import { Button, Busy, Notice, Photo, Dialog } from "./ui";
+import { Button, Busy, Notice, Photo, Field } from "./ui";
 import { ProductCard, ItemDetail } from "./Catalog";
 import { CartSheet } from "./Commerce";
 import { rememberTable } from "./dining-session";
@@ -25,6 +25,7 @@ export function Dining({
     { cart } = usePlatform();
   const [extra, setExtra] = useState<Row[]>([]),
     [next, setNext] = useState<string | null>(null),
+    [query, setQuery] = useState(""),
     [category, setCategory] = useState(""),
     [detail, setDetail] = useState<Row | null>(null),
     [basket, setBasket] = useState(false),
@@ -65,24 +66,12 @@ export function Dining({
       .filter((l) => l.kind === "food" && l.item.restaurantId === merchantId)
       .reduce((n, l) => n + l.quantity, 0);
   return (
-    <section className="a-page">
-      <div
-        className="a-card"
-        style={{ background: "#e8f8ee", marginBottom: 20 }}
-      >
+    <section className="a-page a-dining-page">
+      <div className="a-dining-table" role="status">
         <strong>
-          Dining in · {table.area} · {table.name}
+          Dining in · {[table.area, table.name].filter(Boolean).join(" · ")}
         </strong>
-        <p>
-          Your table is included automatically. Choose food, then send your
-          order to the kitchen.
-        </p>
-        <a
-          className="a-text-link"
-          href={`aura://dine/${merchantId}/${tableId}`}
-        >
-          Open in the Aura app ↗
-        </a>
+        <p>Your table is selected. No app download needed.</p>
       </div>
       <Photo
         src={restaurant.heroImage}
@@ -102,11 +91,16 @@ export function Dining({
       )}
       <div className="a-row between">
         <h2>Menu</h2>
-        <Button onClick={() => setBasket(true)} disabled={!count}>
-          Your order · {count}
-        </Button>
       </div>
-      <div className="a-tabs" style={{ overflowX: "auto" }}>
+      <Field label="Search this menu">
+        <input
+          type="search"
+          value={query}
+          placeholder="Find a dish or drink"
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </Field>
+      <div className="a-tabs a-dining-categories" style={{ overflowX: "auto" }}>
         {["", ...categories].map((c) => (
           <button
             key={c}
@@ -120,16 +114,34 @@ export function Dining({
       <Notice error={error} />
       <div className="a-grid">
         {items
-          .filter((i) => !category || i.category?.trim() === category)
+          .filter(
+            (i) =>
+              (!category || i.category?.trim() === category) &&
+              `${i.name || ""} ${i.description || ""}`
+                .toLowerCase()
+                .includes(query.trim().toLowerCase()),
+          )
           .map((i) => (
             <ProductCard
               key={i.id}
               kind="food"
-              item={i}
+              item={{
+                ...i,
+                isAvailable:
+                  restaurant.isOpen !== false && i.isAvailable !== false,
+              }}
               onOpen={() => setDetail(i)}
             />
           ))}
       </div>
+      {items.length > 0 &&
+        !items.some(
+          (i) =>
+            (!category || i.category?.trim() === category) &&
+            `${i.name || ""} ${i.description || ""}`
+              .toLowerCase()
+              .includes(query.trim().toLowerCase()),
+        ) && <p>No dishes match. Try another search or category.</p>}
       {!items.length && (
         <p>No dishes are available yet. Ask the kitchen for help.</p>
       )}
@@ -161,7 +173,11 @@ export function Dining({
       {detail && (
         <ItemDetail
           key={detail.id}
-          item={detail}
+          item={{
+            ...detail,
+            isAvailable:
+              restaurant.isOpen !== false && detail.isAvailable !== false,
+          }}
           kind="food"
           items={items}
           shops={[restaurant]}
@@ -176,6 +192,22 @@ export function Dining({
           onClose={() => setQrOpen(false)}
         />
       )}
+      <div className="a-dining-basket">
+        <div>
+          <strong>{table.name}</strong>
+          <span>
+            {count
+              ? `${count} ${count === 1 ? "item" : "items"} in your order`
+              : "Choose dishes to start"}
+          </span>
+        </div>
+        <Button
+          onClick={() => setBasket(true)}
+          disabled={!count || restaurant.isOpen === false}
+        >
+          {restaurant.isOpen === false ? "Kitchen closed" : "View your order"}
+        </Button>
+      </div>
       {basket && (
         <CartSheet
           kind="food"

@@ -26,6 +26,7 @@ export function useRemote<T = any>(
     [error, setError] = useState<string | null>(null),
     [loading, setLoading] = useState(!!path),
     [version, setVersion] = useState(0);
+  const account = authenticated ? user?.uid : undefined;
   const fingerprint = JSON.stringify(body),
     seq = useRef(0),
     identity = useRef("");
@@ -34,7 +35,7 @@ export function useRemote<T = any>(
     let alive = true,
       inFlight = false;
     const generation = ++seq.current;
-    const next = [path, fingerprint, authenticated, user?.uid].join("|");
+    const next = [path, fingerprint, authenticated, account].join("|");
     if (identity.current !== next) {
       setData(null);
       setLoading(!!path);
@@ -42,7 +43,7 @@ export function useRemote<T = any>(
     }
     setError(null);
     const run = async () => {
-      if (!path || (authenticated && !user)) {
+      if (!path || (authenticated && !account)) {
         setLoading(false);
         return;
       }
@@ -71,6 +72,6 @@ export function useRemote<T = any>(
       alive = false;
       if (timer) clearInterval(timer);
     };
-  }, [path, fingerprint, poll, authenticated, user?.uid, version]);
+  }, [path, fingerprint, poll, authenticated, account, version]);
   return { data, error, loading, reload, setData };
 }

@@ -533,6 +533,7 @@ function CommerceWorkspace({
         <BusinessProfile
           association={association}
           value={data.restaurant}
+          items={data.menu || []}
           onClose={() => setProfile(false)}
           onSaved={() => {
             setProfile(false);
@@ -1038,11 +1039,13 @@ function ListingWorkspace({
 function BusinessProfile({
   association,
   value,
+  items = [],
   onClose,
   onSaved,
 }: {
   association: Row;
   value: Row;
+  items?: Row[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -1055,6 +1058,7 @@ function BusinessProfile({
     kind = association.kind === "motors" ? "motor" : association.kind,
     id = association.merchantId;
   const patch = (p: Row) => setData((old) => ({ ...old, ...p }));
+  const storefrontCategories = [...new Set(items.map((item) => String(item.categoryLabel || item.category || "").trim()).filter(Boolean))];
   const fields = [
     "name",
     "neighborhood",
@@ -1080,6 +1084,10 @@ function BusinessProfile({
                 "closingTime",
                 "deliveryFeeUsd",
                 "minOrderUsd",
+              "logoImage",
+              "tagline",
+              "categoryOrder",
+              "featuredItemIds",
               ]
             : []),
         ]
@@ -1115,6 +1123,50 @@ function BusinessProfile({
         onChange={(v) => patch({ heroImage: v.images[0] || "" })}
         onBusy={setUploading}
       />
+      {commerce && (
+        <section className="a-card" style={{ marginTop: 18 }}>
+          <h3>Storefront</h3>
+          <Field label="Short tagline">
+            <input maxLength={120} value={data.tagline || ""} onChange={(e) => patch({ tagline: e.target.value })} placeholder="What makes this place special?" />
+          </Field>
+          <span className="a-field"><span>Logo or profile image</span></span>
+          <MediaEditor
+            scope={`/v1/business/${id}`}
+            imagesOnly
+            value={{ images: data.logoImage ? [data.logoImage] : [] }}
+            onChange={(v) => patch({ logoImage: v.images[0] || "" })}
+            onBusy={setUploading}
+          />
+          {storefrontCategories.length > 0 && (
+            <>
+              <h4>Category order</h4>
+              <p>Tap categories in the order customers should see them.</p>
+              <div className="a-chips">
+                {storefrontCategories.map((category) => {
+                  const order = Array.isArray(data.categoryOrder) ? data.categoryOrder as string[] : [];
+                  return <button key={category} className={order.includes(category) ? "active" : ""} onClick={() => patch({ categoryOrder: order.includes(category) ? order.filter((v) => v !== category) : [...order, category] })}>{order.includes(category) ? `${order.indexOf(category) + 1}. ` : ""}{category}</button>;
+                })}
+              </div>
+            </>
+          )}
+          {items.length > 0 && (
+            <>
+              <h4>Featured items</h4>
+              <p>Choose a few items to highlight on your storefront.</p>
+              <div className="a-stack">
+                {items.slice(0, 40).map((item) => {
+                  const selected = Array.isArray(data.featuredItemIds) && data.featuredItemIds.includes(item.id);
+                  const atLimit = Array.isArray(data.featuredItemIds) && data.featuredItemIds.length >= 12;
+                  return <label className="a-row" key={item.id}><input type="checkbox" checked={selected} onChange={(e) => {
+                    const current = Array.isArray(data.featuredItemIds) ? data.featuredItemIds as string[] : [];
+                    patch({ featuredItemIds: e.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id) });
+                  }} disabled={!selected && atLimit} /><Photo src={imageOf(item)} alt="" style={{ width: 42, height: 42, borderRadius: 10 }} /><span>{nameOf(item)}</span></label>;
+                })}
+              </div>
+            </>
+          )}
+        </section>
+      )}
       {commerce && association.kind === "restaurant" && (
         <>
           <h3 style={{ marginTop: 24 }}>Cuisine</h3>

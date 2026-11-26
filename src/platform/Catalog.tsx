@@ -93,6 +93,11 @@ export function Catalog({ kind }: { kind: Kind }) {
       });
   }, [location.search]);
   useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } catch {}
+  }, [tab, merchant]);
+  useEffect(() => {
     if (feed.data) {
       setItems(feed.data.items || []);
       setCursor(feed.data.nextPageToken || null);
@@ -255,6 +260,10 @@ export function Catalog({ kind }: { kind: Kind }) {
           ? deal(b).price - deal(a).price
           : 0,
     );
+  const shopRows = shops.data?.items || [];
+  const selectedMerchant = shopRows.find((s: Row) => s.id === merchant),
+    categoryOrder: string[] = Array.isArray(selectedMerchant?.categoryOrder) ? selectedMerchant.categoryOrder : [],
+    featuredItemIds: string[] = Array.isArray(selectedMerchant?.featuredItemIds) ? selectedMerchant.featuredItemIds : [];
   const categories = [
     ...new Set(
       items
@@ -273,22 +282,25 @@ export function Catalog({ kind }: { kind: Kind }) {
       (c, i, a) =>
         a.findIndex((v) => v.toLowerCase() === c.toLowerCase()) === i,
     )
-    .sort();
+    .sort((a, b) => {
+      const ai = categoryOrder.findIndex((v) => v.toLowerCase() === a.toLowerCase()),
+        bi = categoryOrder.findIndex((v) => v.toLowerCase() === b.toLowerCase());
+      if (ai >= 0 || bi >= 0) return (ai < 0 ? Number.MAX_SAFE_INTEGER : ai) - (bi < 0 ? Number.MAX_SAFE_INTEGER : bi);
+      return a.localeCompare(b);
+    });
   const bf = filtered.filter((i) => deal(i).blackFriday),
     sales = filtered.filter((i) => deal(i).active && !deal(i).blackFriday);
   const spotlight = [...filtered]
-    .sort(
-      (a, b) =>
-        Number(b.isPopular || b.isChefSpecial || 0) * 3 +
-        Number(b.rating || 0) -
-        Number(a.isPopular || a.isChefSpecial || 0) * 3 -
-        Number(a.rating || 0),
-    )
+    .sort((a, b) => {
+      const af = featuredItemIds.indexOf(a.id),
+        bf = featuredItemIds.indexOf(b.id);
+      if (af >= 0 || bf >= 0) return (af < 0 ? Number.MAX_SAFE_INTEGER : af) - (bf < 0 ? Number.MAX_SAFE_INTEGER : bf);
+      return Number(b.isPopular || b.isChefSpecial || 0) * 3 + Number(b.rating || 0) - Number(a.isPopular || a.isChefSpecial || 0) * 3 - Number(a.rating || 0);
+    })
     .slice(0, 10);
   const count = cart
     .filter((l) => l.kind === kind)
     .reduce((n, l) => n + l.quantity, 0);
-  const shopRows = shops.data?.items || [];
   const row = (data: Row[], heading: string, eyebrow: string) => (
     <section className="a-section">
       <div className="a-section-heading">
@@ -321,29 +333,6 @@ export function Catalog({ kind }: { kind: Kind }) {
   return (
     <>
       <section className="a-page">
-        <span className="a-eyebrow">{titles[kind]} · AURA LIBERIA</span>
-        <h1>
-          {kind === "food"
-            ? "A good day starts with good food."
-            : kind === "grocery"
-              ? "Good things, delivered."
-              : kind === "property"
-                ? "A place to call Home."
-                : kind === "motor"
-                  ? "Your next move starts here."
-                  : "Good finds. Your way."}
-        </h1>
-        <p>
-          {kind === "food"
-            ? "Your city. Your kitchens. Your favourites."
-            : kind === "grocery"
-              ? "Your neighbourhood stores. Fresh finds for every day."
-              : kind === "property"
-                ? "Verified homes, apartments, and spaces across Liberia."
-                : kind === "motor"
-                  ? "Quality cars, bikes, and parts from trusted sellers."
-                  : "Curated electronics, fashion, and footwear near you."}
-        </p>
         {nearby && (
           <div className="a-card a-row between">
             <span>
@@ -375,8 +364,8 @@ export function Catalog({ kind }: { kind: Kind }) {
           spotlight.length > 0 &&
           row(
             bf.length ? bf : spotlight,
-            bf.length ? "Black Friday finds" : "In the spotlight",
-            bf.length ? "LIMITED-TIME PRICES" : "SOMETHING WORTH A LOOK",
+            bf.length ? "Black Friday finds" : kind === "food" ? (featuredItemIds.length ? `Featured at ${selectedMerchant?.name || "this kitchen"}` : "Popular dishes") : "In the spotlight",
+            bf.length ? "LIMITED-TIME PRICES" : kind === "food" ? "FROM LOCAL KITCHENS" : "SOMETHING WORTH A LOOK",
           )}
         {bf.length > 0 &&
           sales.length > 0 &&
@@ -458,25 +447,7 @@ export function Catalog({ kind }: { kind: Kind }) {
         ) : tab === "shops" ? (
           <div className="a-grid">
             {shopRows.map((s: Row) => (
-              <button
-                key={s.id}
-                className="a-card"
-                onClick={() => {
-                  setMerchant(s.id);
-                  setTab("shopping");
-                }}
-              >
-                <Photo
-                  src={imageOf(s)}
-                  alt={s.name}
-                  className="a-business-photo"
-                />
-                <h3>{s.name}</h3>
-                <p>{s.neighborhood}</p>
-                <span className="a-text-link">
-                  Explore items <ArrowRight size={16} />
-                </span>
-              </button>
+              <MerchantCard key={s.id} merchant={s} type={kind === "food" ? "kitchen" : "shop"} onOpen={() => { setMerchant(s.id); setTab("shopping"); }} />
             ))}
           </div>
         ) : (
@@ -507,6 +478,7 @@ export function Catalog({ kind }: { kind: Kind }) {
                   key={r.id}
                   item={r}
                   kind={kind}
+                  hideFavorite={kind === "food"}
                   onOpen={() => setDetail(r)}
                 />
               ))}
@@ -526,23 +498,7 @@ export function Catalog({ kind }: { kind: Kind }) {
                 </div>
                 <div className="a-feature-row">
                   {shopRows.slice(0, 6).map((s: Row) => (
-                    <button
-                      key={s.id}
-                      className="a-card a-row"
-                      style={{ minWidth: 270 }}
-                      onClick={() => {
-                        setMerchant(s.id);
-                        setCategory("");
-                      }}
-                    >
-                      <Photo
-                        src={imageOf(s)}
-                        alt={s.name}
-                        style={{ width: 50, height: 50 }}
-                      />
-                      <strong>{s.name}</strong>
-                      <ArrowRight size={16} />
-                    </button>
+                    <MerchantCard key={s.id} merchant={s} compact type="kitchen" onOpen={() => { setMerchant(s.id); setCategory(""); }} />
                   ))}
                 </div>
               </section>
@@ -556,6 +512,7 @@ export function Catalog({ kind }: { kind: Kind }) {
                       key={r.id}
                       item={r}
                       kind={kind}
+                      hideFavorite={kind === "food"}
                       onOpen={() => setDetail(r)}
                     />
                   ))}
@@ -675,13 +632,28 @@ export function period(item: Row) {
       : `/${p}`
     : "";
 }
+function MerchantCard({ merchant, onOpen, compact = false, type }: { merchant: Row; onOpen: () => void; compact?: boolean; type: "kitchen" | "shop" }) {
+  return (
+    <button className={`a-merchant-card${compact ? " compact" : ""}`} onClick={onOpen}>
+      <Photo src={imageOf(merchant)} alt={nameOf(merchant)} />
+      <div className="a-merchant-copy">
+        <span>{merchant.neighborhood || "Local business"}</span>
+        <strong>{nameOf(merchant)}</strong>
+        {!compact && <small>{merchant.tagline || merchant.cuisine || "Discover the menu and latest picks"}</small>}
+        <em>Explore {type} <ArrowRight size={14} /></em>
+      </div>
+    </button>
+  );
+}
 export function ProductCard({
   item,
   kind,
+  hideFavorite = false,
   onOpen,
 }: {
   item: Row;
   kind: Kind;
+  hideFavorite?: boolean;
   onOpen: () => void;
 }) {
   const { saved, toggleSaved } = usePlatform(),
@@ -697,7 +669,7 @@ export function ProductCard({
         >
           <Photo src={imageOf(item)} alt={nameOf(item)} />
         </button>
-        <button
+        {!hideFavorite && <button
           className="a-icon"
           aria-label={saved.has(key) ? "Remove saved item" : "Save item"}
           onClick={() => toggleSaved(catalogs[kind], item.id)}
@@ -707,7 +679,7 @@ export function ProductCard({
             fill={saved.has(key) ? "#d64467" : "none"}
             color={saved.has(key) ? "#d64467" : "#405648"}
           />
-        </button>
+        </button>}
         {d.active && (
           <span className="a-badge">
             {d.blackFriday ? "Black Friday" : `Save ${money(d.saving)}`}
@@ -791,6 +763,11 @@ export function ItemDetail({
     setColor("");
     setNotes("");
     setSpice(item.availableSpiceLevels?.[0] || "No Pepper");
+    try {
+      document
+        .querySelector(".a-dialog-body")
+        ?.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
+    } catch {}
   }, [item.id]);
   const share = async () => {
     const paths = {

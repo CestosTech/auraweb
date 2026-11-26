@@ -29,6 +29,8 @@ export type PlatformState = {
   saved: Set<string>;
   toggleSaved: (kind: string, itemId: string) => Promise<void>;
   openChat: (kind: string, id: string) => Promise<void>;
+  theme: "light" | "dark";
+  setTheme: (theme: "light" | "dark") => void;
 };
 export const Platform = createContext<PlatformState>(null!);
 export const usePlatform = () => useContext(Platform);

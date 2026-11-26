@@ -4,10 +4,94 @@
   --green: #079352;
   --mint: #e8f6ee;
   --line: #e3e9e4;
+  display: flex;
+  flex-direction: column;
   min-height: 100dvh;
   background: #f7f9f7;
   color: var(--ink);
   font-family: Inter, "Plus Jakarta Sans", system-ui, sans-serif;
+}
+.a-shell > main {
+  flex: 1 0 auto;
+}
+.a-shell[data-theme="dark"] {
+  --ink: #f1f4f2;
+  --muted: #a2aca6;
+  --green: #47d18c;
+  --mint: #173a2a;
+  --line: #303a34;
+  background: #0e1110;
+  color: var(--ink);
+  color-scheme: dark;
+}
+.a-shell[data-theme="dark"] .a-header,
+.a-shell[data-theme="dark"] .a-bottom-tabs,
+.a-shell[data-theme="dark"] .a-dialog > footer {
+  background: #151a17;
+  border-color: #303a34;
+}
+.a-shell[data-theme="dark"] .a-card,
+.a-shell[data-theme="dark"] .a-product,
+.a-shell[data-theme="dark"] .a-list-card,
+.a-shell[data-theme="dark"] .a-order-card,
+.a-shell[data-theme="dark"] .a-dialog,
+.a-shell[data-theme="dark"] .a-dialog-body,
+.a-shell[data-theme="dark"] .a-dialog > footer,
+.a-shell[data-theme="dark"] .a-field input,
+.a-shell[data-theme="dark"] .a-field textarea,
+.a-shell[data-theme="dark"] .a-field select,
+.a-shell[data-theme="dark"] .a-catalog-top input,
+.a-shell[data-theme="dark"] .a-search,
+.a-shell[data-theme="dark"] .a-icon,
+.a-shell[data-theme="dark"] .a-chips button,
+.a-shell[data-theme="dark"] .a-tabs > button:not(.a-button),
+.a-shell[data-theme="dark"] .a-field > span:first-child {
+  background-color: #1b211e;
+  border-color: #303a34;
+  color: var(--ink);
+}
+.a-shell[data-theme="dark"] .a-product-body,
+.a-shell[data-theme="dark"] .a-dialog,
+.a-shell[data-theme="dark"] .a-dialog input,
+.a-shell[data-theme="dark"] .a-dialog textarea,
+.a-shell[data-theme="dark"] .a-dialog select {
+  color: var(--ink);
+}
+.a-shell[data-theme="dark"] .a-button.secondary {
+  background: #202823;
+  color: var(--ink);
+  border-color: #3a453e;
+}
+.a-shell[data-theme="dark"] .a-price del,
+.a-shell[data-theme="dark"] .a-product small,
+.a-shell[data-theme="dark"] .a-muted,
+.a-shell[data-theme="dark"] .a-field > span:first-child {
+  color: var(--muted);
+}
+.a-shell[data-theme="dark"] .a-chips button.active,
+.a-shell[data-theme="dark"] .a-tabs > .active,
+.a-shell[data-theme="dark"] .a-bottom-tabs button.active {
+  background: #254832;
+  color: #f1fff6;
+}
+.a-shell[data-theme="dark"] .a-icon svg,
+.a-shell[data-theme="dark"] .a-bottom-tabs svg {
+  color: #d7e3dc;
+}
+html[data-theme="dark"] .a-dialog {
+  background: #151a17;
+  color: #f1f4f2;
+}
+html[data-theme="dark"] .a-dialog > footer {
+  background: #151a17;
+  border-color: #303a34;
+}
+html[data-theme="dark"] .a-dialog input,
+html[data-theme="dark"] .a-dialog textarea,
+html[data-theme="dark"] .a-dialog select {
+  background: #1b211e;
+  border-color: #303a34;
+  color: #f1f4f2;
 }
 html,
 body,
@@ -808,6 +892,47 @@ button.a-card .a-text-link {
   font-size: 10px;
   letter-spacing: 1px;
 }
+.a-merchant-card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  min-width: 250px;
+  min-height: 230px;
+  border-radius: 22px;
+  background: #213d2b;
+  color: white;
+  text-align: left;
+  scroll-snap-align: start;
+}
+.a-merchant-card > img,
+.a-merchant-card > .a-photo-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.a-merchant-card:after {
+  content: "";
+  position: absolute;
+  inset: 25% 0 0;
+  background: linear-gradient(transparent, #08110de8);
+}
+.a-merchant-copy {
+  position: absolute;
+  z-index: 1;
+  inset: auto 16px 15px;
+  display: grid;
+  gap: 5px;
+}
+.a-merchant-copy span,
+.a-merchant-copy small { color: #e0ebe3; font-size: 12px; }
+.a-merchant-copy strong { color: white; font-size: 18px; }
+.a-merchant-copy em { display: inline-flex; align-items: center; gap: 5px; color: white; font-size: 12px; font-style: normal; font-weight: 700; }
+.a-merchant-card.compact { min-width: 270px; min-height: 122px; }
+.a-merchant-card.compact .a-merchant-copy { inset: auto 14px 12px; gap: 3px; }
+.a-merchant-card.compact .a-merchant-copy strong { font-size: 15px; }
+.a-merchant-card.compact .a-merchant-copy small { display: none; }
 .a-section {
   margin: 30px 0;
 }
@@ -1521,6 +1646,12 @@ button.a-card .a-text-link {
     margin-left: -18px;
     margin-right: -18px;
   }
+  .a-page .a-gallery {
+    width: calc(100% + 48px);
+    margin-left: -24px;
+    margin-right: -24px;
+    border-radius: 0;
+  }
   .a-dialog > footer {
     border-radius: 0;
   }
@@ -1890,5 +2021,98 @@ a:focus-visible {
   .a-dining-basket .a-button {
     padding-left: 14px;
     padding-right: 14px;
+  }
+}
+.a-site-footer {
+  margin-top: auto;
+}
+.a-back-btn {
+  border-radius: 50%;
+  margin-bottom: 16px;
+}
+.a-social-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+.a-social-card .a-product-media {
+  width: 100%;
+  aspect-ratio: 1;
+}
+.a-social-card .a-product-body {
+  padding: 12px 14px 14px;
+  width: 100%;
+}
+.a-social-card h3 {
+  min-height: 0;
+  margin: 0 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.a-report-box {
+  margin-top: 24px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #edf2ee;
+  border: 1px solid #dbe4dd;
+}
+.a-report-box .a-field {
+  margin-top: 0;
+}
+.a-shell[data-theme="dark"] .a-report-box {
+  background: #171d19;
+  border-color: #2b352f;
+}
+.a-pwa-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(78px + env(safe-area-inset-bottom));
+  max-width: 440px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.96);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border: 1px solid #dfe7e1;
+  border-radius: 20px;
+  box-shadow: 0 12px 34px #17231c1a;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 40;
+}
+.a-pwa-banner img {
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.a-pwa-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.a-pwa-copy strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+.a-pwa-copy span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.a-shell[data-theme="dark"] .a-pwa-banner {
+  background: rgba(21, 26, 23, 0.96);
+  border-color: #303a34;
+}
+@media (min-width: 721px) {
+  .a-pwa-banner {
+    bottom: 20px;
+    left: 20px;
+    right: auto;
   }
 }

@@ -1,6 +1,6 @@
-import 'dotenv/config';
+import { createServer } from 'node:http';
 import express, { Request, Response } from 'express';
-import { createServer as createViteServer } from 'vite';
+import { createServer as createViteServer, loadEnv } from 'vite';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -8,17 +8,21 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Use Vite precedence: .env < .env.local < mode files < real process env.
+// Do not preload .env into process.env; that would shadow .env.local client values.
+const serverEnv = { ...loadEnv(process.env.NODE_ENV === 'production' ? 'production' : 'development', __dirname, ''), ...process.env };
+
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(serverEnv.PORT) || 3000;
 
 // Infobip server credentials from environment
-const INFOBIP_BASE_URL = process.env.INFOBIP_BASE_URL || 'm9kvm2.api.infobip.com';
-const INFOBIP_API_KEY = process.env.INFOBIP_API_KEY || '';
-const INFOBIP_SENDER_ID = process.env.INFOBIP_SENDER_ID || 'AURA';
+const INFOBIP_BASE_URL = serverEnv.INFOBIP_BASE_URL || 'm9kvm2.api.infobip.com';
+const INFOBIP_API_KEY = serverEnv.INFOBIP_API_KEY || '';
+const INFOBIP_SENDER_ID = serverEnv.INFOBIP_SENDER_ID || 'AURA';
 
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'qoteport@gmail.com').toLowerCase();
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
-const USD_TO_LRD_RATE = Number(process.env.USD_TO_LRD_RATE) || 195;
+const ADMIN_EMAIL = (serverEnv.ADMIN_EMAIL || 'qoteport@gmail.com').toLowerCase();
+const ADMIN_PASSWORD = serverEnv.ADMIN_PASSWORD || '';
+const USD_TO_LRD_RATE = Number(serverEnv.USD_TO_LRD_RATE) || 195;
 
 // Parse standard URL-encoded form data (from Twilio webhooks) and JSON
 app.use(express.urlencoded({ extended: true }));
@@ -509,10 +513,13 @@ app.get('/api/health', (_req: Request, res: Response) => {
 
 async function startServer() {
   const isProd = process.env.NODE_ENV === 'production';
+  const httpServer = createServer(app);
 
   if (!isProd) {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      root: __dirname,
+      envDir: __dirname,
+      server: { middlewareMode: true, ws: serverEnv.DISABLE_HMR === 'true' ? false : { server: httpServer } },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -523,7 +530,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 AURA Monrovia Server running at:`);
     console.log(`   > Local:   http://localhost:${PORT}`);
     console.log(`   > Network: http://127.0.0.1:${PORT}`);

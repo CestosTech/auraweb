@@ -1,14 +1,18 @@
 // AURA Monrovia Food Delivery Service Worker
-const CACHE_NAME = "aura-monrovia-v7-light-icon";
+const CACHE_NAME = "aura-monrovia-v9-dev-safe";
+const LOCAL_DEVELOPMENT = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/aura-icon-32.png",
   "/apple-touch-icon.png",
+  "/icons/Icon-192.png",
+  "/icons/Icon-512.png",
   "/manifest.webmanifest",
 ];
 
 self.addEventListener("install", (event) => {
+  if (LOCAL_DEVELOPMENT) { self.skipWaiting(); return; }
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS).catch((err) => {
@@ -42,10 +46,13 @@ self.addEventListener("message", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // Never intercept development modules, even when an old registration is updating.
+  if (LOCAL_DEVELOPMENT) return;
   const url = event.request.url;
   const parsed = new URL(url);
   if (
     parsed.origin !== self.location.origin ||
+    /^\/(?:@|src\/|node_modules\/|__vite)/.test(parsed.pathname) ||
     parsed.pathname.startsWith("/v1/") ||
     event.request.headers.has("Authorization")
   )
@@ -99,7 +106,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets: Cache-first with network background revalidation
+  // Cache only build assets and known public images; never arbitrary JS modules.
+  if (!parsed.pathname.startsWith('/assets/') && !STATIC_ASSETS.includes(parsed.pathname)) return;
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const networkFetch = fetch(event.request)
