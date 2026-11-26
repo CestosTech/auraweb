@@ -63,6 +63,14 @@
   background: #151a17;
   border-color: #303a34;
 }
+.a-shell[data-theme="dark"] .a-conversations button.active {
+  background: #254832;
+  color: #f1fff6;
+}
+.a-shell[data-theme="dark"] .a-chat > header,
+.a-shell[data-theme="dark"] .a-chat-compose {
+  border-color: #303a34;
+}
 .a-shell[data-theme="dark"] .a-bubble {
   background: #222a25;
   color: var(--ink);
@@ -1338,9 +1346,16 @@ button.a-card .a-text-link {
   max-height: 75dvh;
 }
 .a-chat > header {
-  padding: 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid #e4ebe6;
   font-weight: 700;
+}
+.a-chat-back {
+  display: none;
+}
+.a-chat-placeholder {
+  display: grid;
+  place-items: center;
 }
 .a-chat-history {
   flex: 1;
@@ -1735,13 +1750,24 @@ button.a-card .a-text-link {
   }
   .a-message-layout {
     grid-template-columns: 1fr;
+    min-height: calc(100dvh - 180px);
   }
   .a-conversations {
-    max-height: 200px;
-    border-bottom: 1px solid #e2ebe4;
+    max-height: none;
+    border-right: 0;
+  }
+  .a-message-layout:not(.has-chat) .a-chat-placeholder {
+    display: none;
+  }
+  .a-message-layout.has-chat .a-conversations {
+    display: none;
+  }
+  .a-chat-back {
+    display: inline-flex;
   }
   .a-chat {
-    min-height: 60dvh;
+    min-height: calc(100dvh - 180px);
+    max-height: calc(100dvh - 160px);
   }
   .a-bubble {
     max-width: 90%;
