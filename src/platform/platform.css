@@ -1113,8 +1113,11 @@ button.a-card .a-text-link {
 .a-row.between {
   justify-content: space-between;
 }
-.a-stack > * + * {
-  margin-top: 14px;
+.a-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
 }
 .a-list-card {
   background: white;
