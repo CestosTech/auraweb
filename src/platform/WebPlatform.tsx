@@ -418,7 +418,6 @@ function Shell() {
           <span>Aura Liberia</span>
           <LegalLinks />
           <button onClick={() => go("/portal")}>For businesses</button>
-          <button onClick={() => go("/admin")}>Administration</button>
         </footer>
         <PwaInstallPrompt />
       </div>
