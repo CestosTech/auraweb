@@ -93,6 +93,11 @@ export function Catalog({ kind }: { kind: Kind }) {
       });
   }, [location.search]);
   useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } catch {}
+  }, [tab, merchant]);
+  useEffect(() => {
     if (feed.data) {
       setItems(feed.data.items || []);
       setCursor(feed.data.nextPageToken || null);
@@ -328,29 +333,6 @@ export function Catalog({ kind }: { kind: Kind }) {
   return (
     <>
       <section className="a-page">
-        <span className="a-eyebrow">{titles[kind]} · AURA LIBERIA</span>
-        <h1>
-          {kind === "food"
-            ? "Popular dishes, picked for you."
-            : kind === "grocery"
-              ? "Good things, delivered."
-              : kind === "property"
-                ? "A place to call Home."
-                : kind === "motor"
-                  ? "Your next move starts here."
-                  : "Good finds. Your way."}
-        </h1>
-        <p>
-          {kind === "food"
-            ? "Fresh picks from kitchens around you."
-            : kind === "grocery"
-              ? "Your neighbourhood stores. Fresh finds for every day."
-              : kind === "property"
-                ? "Verified homes, apartments, and spaces across Liberia."
-                : kind === "motor"
-                  ? "Quality cars, bikes, and parts from trusted sellers."
-                  : "Curated electronics, fashion, and footwear near you."}
-        </p>
         {nearby && (
           <div className="a-card a-row between">
             <span>
@@ -781,6 +763,11 @@ export function ItemDetail({
     setColor("");
     setNotes("");
     setSpice(item.availableSpiceLevels?.[0] || "No Pepper");
+    try {
+      document
+        .querySelector(".a-dialog-body")
+        ?.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
+    } catch {}
   }, [item.id]);
   const share = async () => {
     const paths = {

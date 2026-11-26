@@ -1,11 +1,13 @@
 // AURA Monrovia Food Delivery Service Worker
-const CACHE_NAME = "aura-monrovia-v8-dev-safe";
+const CACHE_NAME = "aura-monrovia-v9-dev-safe";
 const LOCAL_DEVELOPMENT = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/aura-icon-32.png",
   "/apple-touch-icon.png",
+  "/icons/Icon-192.png",
+  "/icons/Icon-512.png",
   "/manifest.webmanifest",
 ];
 

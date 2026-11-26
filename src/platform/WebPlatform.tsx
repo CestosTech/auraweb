@@ -9,6 +9,8 @@ import {
   Store,
   User,
   ShieldCheck,
+  Download,
+  X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { LoginModal } from "../components/LoginModal";
@@ -49,8 +51,6 @@ const nav = [
   ["/homes", "Homes"],
   ["/motors", "Motors"],
   ["/lifestyle", "Lifestyle"],
-  ["/rides", "Rides"],
-  ["/live", "Live Market"],
 ];
 export default function WebPlatform() {
   return mapsKey ? (
@@ -228,6 +228,11 @@ function Shell() {
   useEffect(() => {
     if (privateRoute && !user) void requireLogin();
   }, [privateRoute, user?.uid, path]);
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } catch {}
+  }, [path]);
   const unread = (notifications.data?.notifications || []).filter(
       (n: Row) => !n.readAt,
     ).length,
@@ -415,6 +420,7 @@ function Shell() {
           <button onClick={() => go("/portal")}>For businesses</button>
           <button onClick={() => go("/admin")}>Administration</button>
         </footer>
+        <PwaInstallPrompt />
       </div>
       <LoginModal
         isOpen={login}
@@ -451,5 +457,89 @@ function Shell() {
         </div>
       )}
     </Platform.Provider>
+  );
+}
+function PwaInstallPrompt() {
+  const [promptEvent, setPromptEvent] = useState<any>(null);
+  const [iosHint, setIosHint] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("aura_pwa_prompt_dismissed") === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    const standalone =
+      typeof window !== "undefined" &&
+      (window.matchMedia?.("(display-mode: standalone)").matches ||
+        (navigator as any).standalone === true);
+    if (standalone || dismissed) return;
+    const ua = navigator.userAgent || "";
+    const isIos =
+      /iPhone|iPad|iPod/i.test(ua) && !/CriOS|FxiOS|EdgiOS/i.test(ua);
+    if (isIos) setIosHint(true);
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setPromptEvent(e);
+    };
+    const onInstalled = () => {
+      setPromptEvent(null);
+      setIosHint(false);
+    };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, [dismissed]);
+  if (dismissed || (!promptEvent && !iosHint)) return null;
+  const close = () => {
+    setDismissed(true);
+    setPromptEvent(null);
+    setIosHint(false);
+    try {
+      localStorage.setItem("aura_pwa_prompt_dismissed", "1");
+    } catch {}
+  };
+  return (
+    <aside className="a-pwa-banner" aria-label="Install Aura Liberia app">
+      <img
+        src="/icons/Icon-192.png?v=aura-light-v2"
+        alt=""
+        width={40}
+        height={40}
+      />
+      <div className="a-pwa-copy">
+        <strong>Install Aura Liberia</strong>
+        <span>
+          {promptEvent
+            ? "Add to your home screen for faster access."
+            : "Tap Share, then Add to Home Screen."}
+        </span>
+      </div>
+      {promptEvent && (
+        <Button
+          onClick={async () => {
+            try {
+              await promptEvent.prompt();
+              const choice = await promptEvent.userChoice;
+              if (choice?.outcome === "accepted") close();
+            } catch {}
+          }}
+        >
+          <Download size={15} />
+          Install
+        </Button>
+      )}
+      <button
+        className="a-icon"
+        aria-label="Dismiss install prompt"
+        onClick={close}
+      >
+        <X size={16} />
+      </button>
+    </aside>
   );
 }

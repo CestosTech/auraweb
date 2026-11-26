@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { command } from "../utils/commandApi";
 import { useRemote, friendly } from "./hooks";
@@ -57,6 +58,11 @@ export function Social({
     setExtra([]);
     setNext(feed.data?.nextCursor ?? null);
   }, [feed.data, tab]);
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } catch {}
+  }, [tab]);
   if (id) return <SocialDetail key={id} events={events} id={id} />;
   const rows = [...(feed.data?.items || []), ...extra].filter(
     (r: Row) =>
@@ -73,51 +79,31 @@ export function Social({
   );
   return (
     <section className="a-page">
-      <span className="a-eyebrow">{events ? "EVENTS" : "COMMUNITY"}</span>
-      <div className="a-row between">
-        <h1>
-          {events ? (
-            <>
-              Good plans.
-              <br />
-              Better together.
-            </>
-          ) : (
-            <>
-              Your neighbourhood.
-              <br />
-              Your people.
-            </>
+      <div className="a-row between" style={{ gap: 12, flexWrap: "wrap" }}>
+        <div className="a-tabs" style={{ margin: 0, flex: 1 }}>
+          {["Explore", "Saved", ...(events ? ["Agenda"] : []), "Mine"].map(
+            (t) => (
+              <button
+                key={t}
+                className={tab === t ? "active" : ""}
+                onClick={async () => {
+                  if (t !== "Explore" && !(await requireLogin())) return;
+                  setTab(t);
+                }}
+              >
+                {t === "Mine" ? (events ? "My events" : "My posts") : t}
+              </button>
+            ),
           )}
-        </h1>
+        </div>
         <Button
+          style={{ whiteSpace: "nowrap", flexShrink: 0 }}
           onClick={async () => {
             if (await requireLogin()) setEditing(true);
           }}
         >
           {events ? "Create event" : "Create post"}
         </Button>
-      </div>
-      <p>
-        {events
-          ? "Find your next experience. Save the date. Bring your people."
-          : "Ask a question, share a good find and join the conversation."}
-      </p>
-      <div className="a-tabs">
-        {["Explore", "Saved", ...(events ? ["Agenda"] : []), "Mine"].map(
-          (t) => (
-            <button
-              key={t}
-              className={tab === t ? "active" : ""}
-              onClick={async () => {
-                if (t !== "Explore" && !(await requireLogin())) return;
-                setTab(t);
-              }}
-            >
-              {t === "Mine" ? (events ? "My events" : "My posts") : t}
-            </button>
-          ),
-        )}
       </div>
       <div className="a-two">
         <Field label="Search">
@@ -151,8 +137,7 @@ export function Social({
           {rows.map((r: Row) => (
             <button
               key={r.id || r.eventId}
-              className="a-product"
-              style={{ textAlign: "left" }}
+              className="a-product a-social-card"
               onClick={() =>
                 go(
                   "/" +
@@ -162,20 +147,15 @@ export function Social({
                 )
               }
             >
-              {imageOf(r) && (
-                <Photo
-                  src={imageOf(r)}
-                  style={{ width: "100%", height: 180, objectFit: "cover" }}
-                />
-              )}
+              <div className="a-product-media">
+                <Photo src={imageOf(r)} alt={r.title} />
+              </div>
               <div className="a-product-body">
-                <span className="a-eyebrow">
-                  {events ? date(r.startsAt) : r.category}
-                </span>
                 <h3>{r.title}</h3>
-                <p>{events ? r.venue : r.description?.slice(0, 130)}</p>
                 <small>
-                  {r.organizerName}
+                  {events
+                    ? date(r.startsAt)
+                    : r.category || r.organizerName || ""}
                   {r.status && r.status !== "approved"
                     ? " · " + label(r.status)
                     : ""}
@@ -285,10 +265,11 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
   return (
     <section className="a-page narrow">
       <button
-        className="a-text-link"
+        className="a-icon a-back-btn"
+        aria-label={`Back to ${events ? "Events" : "Community"}`}
         onClick={() => go("/" + (events ? "events" : "community"))}
       >
-        Back to {events ? "Events" : "Community"}
+        <ArrowLeft size={20} />
       </button>
       <Gallery item={r} />
       <h1>{r.title}</h1>
@@ -398,6 +379,11 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
             )}
           </>
         )}
+        {r.eventId && (
+          <a className="a-button secondary" href={"/events/" + r.eventId}>
+            See the linked event
+          </a>
+        )}
       </div>
       <Notice error={error} />
       {events && r.status === "approved" && (
@@ -438,8 +424,8 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
           <p>
             Registration does not verify a payment or guarantee paid admission.
           </p>
-          <div className="a-row" style={{ flexWrap: "wrap" }}>
-            {r.coords && (
+          {r.coords && (
+            <div className="a-row" style={{ flexWrap: "wrap" }}>
               <a
                 className="a-button secondary"
                 href={`https://www.google.com/maps/dir/?api=1&destination=${r.coords.lat},${r.coords.lng}`}
@@ -448,25 +434,9 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
               >
                 Directions
               </a>
-            )}
-            <Button secondary onClick={() => go("/")}>
-              Find a kitchen
-            </Button>
-            <Button
-              secondary
-              onClick={async () => {
-                if (await requireLogin()) setDiscussion(true);
-              }}
-            >
-              Start a discussion
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
-      )}
-      {r.eventId && (
-        <a className="a-button secondary" href={"/events/" + r.eventId}>
-          See the linked event
-        </a>
       )}
       {r.status === "approved" && (
         <section className="a-section">
@@ -497,21 +467,23 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
           >
             Post reply
           </Button>
-          <Field label="Report a concern">
-            <textarea
-              maxLength={1000}
-              value={reportReason}
-              placeholder="What should our moderation team review?"
-              onChange={(e) => setReportReason(e.target.value)}
-            />
-          </Field>
-          <Button
-            secondary
-            disabled={busy || reportReason.trim().length < 5}
-            onClick={() => act("report", { reason: reportReason })}
-          >
-            Send report
-          </Button>
+          <div className="a-report-box">
+            <Field label="Report a concern">
+              <textarea
+                maxLength={1000}
+                value={reportReason}
+                placeholder="What should our moderation team review?"
+                onChange={(e) => setReportReason(e.target.value)}
+              />
+            </Field>
+            <Button
+              secondary
+              disabled={busy || reportReason.trim().length < 5}
+              onClick={() => act("report", { reason: reportReason })}
+            >
+              Send report
+            </Button>
+          </div>
         </section>
       )}
       {discussion && (
