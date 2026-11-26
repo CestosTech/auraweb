@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { command } from "../utils/commandApi";
 import { useRemote, friendly } from "./hooks";
@@ -104,14 +104,17 @@ export function Social({
             ),
           )}
         </div>
-        <Button
-          style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+        <button
+          className="a-icon"
+          aria-label={events ? "Create event" : "Create post"}
+          title={events ? "Create event" : "Create post"}
+          style={{ flexShrink: 0, background: "#17231c", color: "#fff" }}
           onClick={async () => {
             if (await requireLogin()) setEditing(true);
           }}
         >
-          {events ? "Create event" : "Create post"}
-        </Button>
+          <Plus size={20} />
+        </button>
       </div>
       <div className="a-catalog-top">
         <div className="a-search">
