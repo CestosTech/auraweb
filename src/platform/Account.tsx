@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { command } from "../utils/commandApi";
 import { useRemote, friendly } from "./hooks";
 import { usePlatform, go } from "./context";
-import { Button, Dialog, Field, Notice } from "./ui";
+import { Button, Dialog, Field, Notice, Select } from "./ui";
 import { LocationDialog } from "./Location";
 import { disablePush } from "./Notifications";
 import { Row } from "./model";
@@ -52,13 +52,15 @@ export function Account() {
       <section className="a-section a-card">
         <h3>Appearance</h3>
         <p>Choose the look that feels right for you.</p>
-        <label className="a-field">
-          <span>Theme</span>
-          <select value={theme} onChange={(e) => setTheme(e.target.value as "light" | "dark")}>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </label>
+        <Select
+          label="Theme"
+          value={theme}
+          options={[
+            { value: "light", label: "Light" },
+            { value: "dark", label: "Dark" },
+          ]}
+          onChange={(v) => setTheme(v as "light" | "dark")}
+        />
       </section>
       <div className="a-card">
         <h2>{user?.name || "Welcome to Aura"}</h2>

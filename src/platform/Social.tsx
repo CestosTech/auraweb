@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { command } from "../utils/commandApi";
 import { useRemote, friendly } from "./hooks";
@@ -39,6 +39,7 @@ export function Social({
     [query, setQuery] = useState(""),
     [category, setCategory] = useState(""),
     [editing, setEditing] = useState(false),
+    [filterOpen, setFilterOpen] = useState(false),
     [extra, setExtra] = useState<Row[]>([]),
     [next, setNext] = useState<string | null>(null),
     [paging, setPaging] = useState(false),
@@ -64,6 +65,13 @@ export function Social({
     } catch {}
   }, [tab]);
   if (id) return <SocialDetail key={id} events={events} id={id} />;
+  const categories = [
+    ...new Set<string>(
+      (feed.data?.items || [])
+        .map((r: Row) => r.category || "")
+        .filter(Boolean),
+    ),
+  ];
   const rows = [...(feed.data?.items || []), ...extra].filter(
     (r: Row) =>
       (!category || r.category === category) &&
@@ -96,39 +104,58 @@ export function Social({
             ),
           )}
         </div>
-        <Button
-          style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+        <button
+          className="a-icon"
+          aria-label={events ? "Create event" : "Create post"}
+          title={events ? "Create event" : "Create post"}
+          style={{ flexShrink: 0, background: "#17231c", color: "#fff" }}
           onClick={async () => {
             if (await requireLogin()) setEditing(true);
           }}
         >
-          {events ? "Create event" : "Create post"}
-        </Button>
+          <Plus size={20} />
+        </button>
       </div>
-      <div className="a-two">
-        <Field label="Search">
+      <div className="a-catalog-top">
+        <div className="a-search">
+          <Search size={20} />
           <input
+            aria-label="Search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
               events ? "Events and venues" : "Community conversations"
             }
           />
-        </Field>
-        <Select
-          label="Category"
-          value={category}
-          options={[
-            "",
-            ...new Set<string>(
-              (feed.data?.items || [])
-                .map((r: Row) => r.category || "")
-                .filter(Boolean),
-            ),
-          ]}
-          onChange={setCategory}
-        />
+        </div>
+        <button
+          className="a-icon"
+          aria-label="Filter by category"
+          onClick={() => setFilterOpen(true)}
+        >
+          <SlidersHorizontal size={21} />
+          {category && <span className="a-count">•</span>}
+        </button>
       </div>
+      {categories.length > 0 && (
+        <div className="a-chips">
+          <button
+            className={!category ? "active" : ""}
+            onClick={() => setCategory("")}
+          >
+            All
+          </button>
+          {categories.map((c) => (
+            <button
+              key={c}
+              className={category === c ? "active" : ""}
+              onClick={() => setCategory(c)}
+            >
+              {label(c)}
+            </button>
+          ))}
+        </div>
+      )}
       <Notice error={feed.error} retry={feed.reload} />
       {feed.loading ? (
         <Busy />
@@ -198,6 +225,33 @@ export function Social({
         >
           {paging ? "Loading..." : "Load more"}
         </Button>
+      )}
+      {filterOpen && (
+        <Dialog title="Category" onClose={() => setFilterOpen(false)}>
+          <div className="a-chips" style={{ flexWrap: "wrap", padding: 0 }}>
+            <button
+              className={!category ? "active" : ""}
+              onClick={() => {
+                setCategory("");
+                setFilterOpen(false);
+              }}
+            >
+              All
+            </button>
+            {categories.map((c) => (
+              <button
+                key={c}
+                className={category === c ? "active" : ""}
+                onClick={() => {
+                  setCategory(c);
+                  setFilterOpen(false);
+                }}
+              >
+                {label(c)}
+              </button>
+            ))}
+          </div>
+        </Dialog>
       )}
       {editing && (
         <SocialEditor
@@ -455,8 +509,24 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
               onChange={(e) => setText(e.target.value)}
             />
           </Field>
-          <p>{publishingRules}</p>
-          <label><input type="checkbox" checked={replyAgreement} onChange={e => setReplyAgreement(e.target.checked)} /> I accept the <a href="/terms" target="_blank" rel="noreferrer">Terms & Community Guidelines</a> and confirm my reply follows them.</label>
+          <details className="a-rules-toggle">
+            <summary>Community guidelines</summary>
+            <p>{publishingRules}</p>
+          </details>
+          <label className="a-check-row">
+            <input
+              type="checkbox"
+              checked={replyAgreement}
+              onChange={(e) => setReplyAgreement(e.target.checked)}
+            />
+            <span>
+              I accept the{" "}
+              <a href="/terms" target="_blank" rel="noreferrer">
+                Terms &amp; Guidelines
+              </a>
+              .
+            </span>
+          </label>
           <Button
             disabled={busy || !text.trim() || !replyAgreement}
             onClick={() => {
@@ -938,8 +1008,25 @@ function SocialEditor({
         )}
       </fieldset>
       <Notice error={error} />
-      <p>{publishingRules}</p>
-      <label><input type="checkbox" checked={acceptedRules} disabled={busy || uncertain} onChange={e => setAcceptedRules(e.target.checked)} /> I accept the <a href="/terms" target="_blank" rel="noreferrer">Terms & Community Guidelines</a> and confirm this material follows them.</label>
+      <details className="a-rules-toggle">
+        <summary>Community guidelines</summary>
+        <p>{publishingRules}</p>
+      </details>
+      <label className="a-check-row">
+        <input
+          type="checkbox"
+          checked={acceptedRules}
+          disabled={busy || uncertain}
+          onChange={(e) => setAcceptedRules(e.target.checked)}
+        />
+        <span>
+          I accept the{" "}
+          <a href="/terms" target="_blank" rel="noreferrer">
+            Terms &amp; Guidelines
+          </a>
+          .
+        </span>
+      </label>
       <Button
         style={{ marginTop: 24 }}
         disabled={busy || uploading || !acceptedRules}
