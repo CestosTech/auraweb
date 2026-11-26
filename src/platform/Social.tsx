@@ -455,8 +455,24 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
               onChange={(e) => setText(e.target.value)}
             />
           </Field>
-          <p>{publishingRules}</p>
-          <label><input type="checkbox" checked={replyAgreement} onChange={e => setReplyAgreement(e.target.checked)} /> I accept the <a href="/terms" target="_blank" rel="noreferrer">Terms & Community Guidelines</a> and confirm my reply follows them.</label>
+          <details className="a-rules-toggle">
+            <summary>Community guidelines</summary>
+            <p>{publishingRules}</p>
+          </details>
+          <label className="a-check-row">
+            <input
+              type="checkbox"
+              checked={replyAgreement}
+              onChange={(e) => setReplyAgreement(e.target.checked)}
+            />
+            <span>
+              I accept the{" "}
+              <a href="/terms" target="_blank" rel="noreferrer">
+                Terms &amp; Guidelines
+              </a>
+              .
+            </span>
+          </label>
           <Button
             disabled={busy || !text.trim() || !replyAgreement}
             onClick={() => {
@@ -938,8 +954,25 @@ function SocialEditor({
         )}
       </fieldset>
       <Notice error={error} />
-      <p>{publishingRules}</p>
-      <label><input type="checkbox" checked={acceptedRules} disabled={busy || uncertain} onChange={e => setAcceptedRules(e.target.checked)} /> I accept the <a href="/terms" target="_blank" rel="noreferrer">Terms & Community Guidelines</a> and confirm this material follows them.</label>
+      <details className="a-rules-toggle">
+        <summary>Community guidelines</summary>
+        <p>{publishingRules}</p>
+      </details>
+      <label className="a-check-row">
+        <input
+          type="checkbox"
+          checked={acceptedRules}
+          disabled={busy || uncertain}
+          onChange={(e) => setAcceptedRules(e.target.checked)}
+        />
+        <span>
+          I accept the{" "}
+          <a href="/terms" target="_blank" rel="noreferrer">
+            Terms &amp; Guidelines
+          </a>
+          .
+        </span>
+      </label>
       <Button
         style={{ marginTop: 24 }}
         disabled={busy || uploading || !acceptedRules}

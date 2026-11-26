@@ -2063,6 +2063,46 @@ a:focus-visible {
 .a-report-box .a-field {
   margin-top: 0;
 }
+.a-rules-toggle {
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  background: #f5f7f5;
+}
+.a-rules-toggle summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.a-rules-toggle p {
+  font-size: 12px;
+  margin: 10px 0 2px;
+}
+.a-check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 0 16px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.a-check-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  flex-shrink: 0;
+}
+.a-check-row a {
+  color: var(--green);
+  text-decoration: underline;
+}
+.a-shell[data-theme="dark"] .a-rules-toggle {
+  background: #171d19;
+  border-color: #2b352f;
+}
 .a-shell[data-theme="dark"] .a-report-box {
   background: #171d19;
   border-color: #2b352f;

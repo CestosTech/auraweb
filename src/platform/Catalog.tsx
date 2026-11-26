@@ -367,76 +367,82 @@ export function Catalog({ kind }: { kind: Kind }) {
             bf.length ? "Black Friday finds" : kind === "food" ? (featuredItemIds.length ? `Featured at ${selectedMerchant?.name || "this kitchen"}` : "Popular dishes") : "In the spotlight",
             bf.length ? "LIMITED-TIME PRICES" : kind === "food" ? "FROM LOCAL KITCHENS" : "SOMETHING WORTH A LOOK",
           )}
-        {bf.length > 0 &&
+        {tab === "shopping" &&
+          bf.length > 0 &&
           sales.length > 0 &&
           row(sales, "On sale today", "A LITTLE MORE VALUE")}
-        {!bf.length &&
+        {tab === "shopping" &&
+          !bf.length &&
           sales.length > 0 &&
           row(sales, "On sale today", "A LITTLE MORE VALUE")}
-        <div className="a-catalog-top">
-          <div className="a-search">
-            <Search size={20} />
-            <input
-              aria-label={`Search ${titles[kind]}`}
-              placeholder={`Search ${kind === "grocery" ? "groceries and stores" : titles[kind].toLowerCase()}`}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-          <button
-            className="a-icon"
-            aria-label="Advanced filters"
-            onClick={() => setFilterOpen(true)}
-          >
-            <SlidersHorizontal size={21} />
-            {Object.values(filters).some(Boolean) && (
-              <span className="a-count">•</span>
-            )}
-          </button>
-        </div>
-        <div className="a-chips">
-          <button
-            className={!category ? "active" : ""}
-            onClick={() => setCategory("")}
-          >
-            All
-          </button>
-          {categories.map((c) => (
-            <button
-              key={c}
-              className={category === c ? "active" : ""}
-              onClick={() => setCategory(c)}
-            >
-              {label(c)}
-            </button>
-          ))}
-        </div>
-        {["food", "grocery"].includes(kind) && (
-          <div className="a-chips">
-            <button
-              className={!merchant ? "active" : ""}
-              onClick={() => {
-                manual.current = true;
-                setMerchant("");
-                setNearby("");
-              }}
-            >
-              All {kind === "food" ? "kitchens" : "shops"}
-            </button>
-            {shopRows.map((s: Row) => (
+        {tab !== "saved" && (
+          <>
+            <div className="a-catalog-top">
+              <div className="a-search">
+                <Search size={20} />
+                <input
+                  aria-label={`Search ${titles[kind]}`}
+                  placeholder={`Search ${kind === "grocery" ? "groceries and stores" : titles[kind].toLowerCase()}`}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
               <button
-                key={s.id}
-                className={merchant === s.id ? "active" : ""}
-                onClick={() => {
-                  manual.current = true;
-                  setMerchant(s.id);
-                  setCategory("");
-                }}
+                className="a-icon"
+                aria-label="Advanced filters"
+                onClick={() => setFilterOpen(true)}
               >
-                {s.name}
+                <SlidersHorizontal size={21} />
+                {Object.values(filters).some(Boolean) && (
+                  <span className="a-count">•</span>
+                )}
               </button>
-            ))}
-          </div>
+            </div>
+            <div className="a-chips">
+              <button
+                className={!category ? "active" : ""}
+                onClick={() => setCategory("")}
+              >
+                All
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c}
+                  className={category === c ? "active" : ""}
+                  onClick={() => setCategory(c)}
+                >
+                  {label(c)}
+                </button>
+              ))}
+            </div>
+            {["food", "grocery"].includes(kind) && (
+              <div className="a-chips">
+                <button
+                  className={!merchant ? "active" : ""}
+                  onClick={() => {
+                    manual.current = true;
+                    setMerchant("");
+                    setNearby("");
+                  }}
+                >
+                  All {kind === "food" ? "kitchens" : "shops"}
+                </button>
+                {shopRows.map((s: Row) => (
+                  <button
+                    key={s.id}
+                    className={merchant === s.id ? "active" : ""}
+                    onClick={() => {
+                      manual.current = true;
+                      setMerchant(s.id);
+                      setCategory("");
+                    }}
+                  >
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
         <Notice
           error={error || feed.error || shops.error}
@@ -453,27 +459,41 @@ export function Catalog({ kind }: { kind: Kind }) {
         ) : (
           <>
             <div className="a-section-heading">
-              <h2>{filtered.length} finds for you</h2>
+              <h2>
+                {tab === "saved"
+                  ? `${filtered.length} saved`
+                  : `${filtered.length} finds for you`}
+              </h2>
               {tab === "saved" && <span>Saved across your devices</span>}
             </div>
             {!filtered.length && (
-              <Empty title="No items match">
-                <p>Try a different category or reset the filters.</p>
+              <Empty
+                title={tab === "saved" ? "No saved items yet" : "No items match"}
+              >
+                <p>
+                  {tab === "saved"
+                    ? "Tap the heart on any item to save it here."
+                    : "Try a different category or reset the filters."}
+                </p>
                 <Button
                   secondary
                   onClick={() => {
+                    if (tab === "saved") {
+                      setTab("shopping");
+                      return;
+                    }
                     setFilters({});
                     setQuery("");
                     setCategory("");
                     setDepartment("");
                   }}
                 >
-                  Reset filters
+                  {tab === "saved" ? "Browse items" : "Reset filters"}
                 </Button>
               </Empty>
             )}
             <div className="a-grid">
-              {filtered.slice(0, 12).map((r) => (
+              {(tab === "saved" ? filtered : filtered.slice(0, 12)).map((r) => (
                 <ProductCard
                   key={r.id}
                   item={r}
@@ -483,7 +503,10 @@ export function Catalog({ kind }: { kind: Kind }) {
                 />
               ))}
             </div>
-            {kind === "food" && !merchant && shopRows.length > 0 && (
+            {tab !== "saved" &&
+              kind === "food" &&
+              !merchant &&
+              shopRows.length > 0 && (
               <section className="a-section">
                 <div className="a-section-heading">
                   <h2>Meet the kitchens</h2>
@@ -503,7 +526,7 @@ export function Catalog({ kind }: { kind: Kind }) {
                 </div>
               </section>
             )}
-            {filtered.length > 12 && (
+            {tab !== "saved" && filtered.length > 12 && (
               <section className="a-section">
                 <h2>More to explore</h2>
                 <div className="a-grid">
