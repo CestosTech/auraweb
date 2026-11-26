@@ -1802,6 +1802,33 @@ button.a-card .a-text-link {
   .a-shell .a-site-footer {
     padding-bottom: 28px;
   }
+  .a-dialog.wide {
+    width: min(1040px, 94vw);
+  }
+  .a-detail-layout.has-related {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+  .a-detail-layout.has-related .a-detail-main .a-gallery {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 20px;
+  }
+  .a-detail-related {
+    position: sticky;
+    top: 0;
+    margin: 0;
+  }
+  .a-detail-related h2 {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .a-detail-related .a-grid {
+    gap: 12px;
+  }
 }
 
 .a-dialog {

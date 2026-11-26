@@ -835,7 +835,13 @@ export function ItemDetail({
   const related = recommend(items, item);
   return (
     <Dialog title={nameOf(item)} onClose={onClose} wide>
-      <Gallery item={item} />
+      <div
+        className={
+          related.length > 0 ? "a-detail-layout has-related" : "a-detail-layout"
+        }
+      >
+        <div className="a-detail-main">
+          <Gallery item={item} />
       <div className="a-detail-title">
         <div>
           <h2>{nameOf(item)}</h2>
@@ -1055,8 +1061,9 @@ export function ItemDetail({
           </small>
         </div>
       </div>
+        </div>
       {related.length > 0 && (
-        <section className="a-section">
+        <aside className="a-section a-detail-related">
           <h2>Worth a look, too</h2>
           <p>Related by category, seller and price.</p>
           <div
@@ -1072,8 +1079,9 @@ export function ItemDetail({
               />
             ))}
           </div>
-        </section>
+        </aside>
       )}
+      </div>
     </Dialog>
   );
 }
