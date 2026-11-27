@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Search, SlidersHorizontal } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { command } from "../utils/commandApi";
 import { useRemote, friendly } from "./hooks";
@@ -329,16 +337,29 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
       <h1>{r.title}</h1>
       <p>By {r.organizerName}</p>
       {events && (
-        <div className="a-card">
-          <h3>{date(r.startsAt)}</h3>
-          <p>
-            Until {date(r.endsAt)} · {r.timeZone}
-          </p>
-          <p>{r.venue}</p>
+        <div className="a-card a-event-meta">
+          <div className="a-meta-row">
+            <Calendar size={17} />
+            <div>
+              <strong>{date(r.startsAt)}</strong>
+              <small>
+                Until {date(r.endsAt)} · {r.timeZone}
+              </small>
+            </div>
+          </div>
+          {r.venue && (
+            <div className="a-meta-row">
+              <MapPin size={17} />
+              <span>{r.venue}</span>
+            </div>
+          )}
           {r.capacity && (
-            <p>
-              {r.registrationCount} / {r.capacity} registrations
-            </p>
+            <div className="a-meta-row">
+              <Users size={17} />
+              <span>
+                {r.registrationCount} / {r.capacity} registrations
+              </span>
+            </div>
           )}
         </div>
       )}
@@ -348,7 +369,10 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
           {label(r.status)} {r.reviewReason}
         </p>
       )}
-      <div className="a-row" style={{ gap: 12, flexWrap: "wrap" }}>
+      <div
+        className="a-row"
+        style={{ gap: 12, flexWrap: "wrap", marginTop: 14 }}
+      >
         <Button
           secondary
           onClick={async () => {
@@ -908,20 +932,38 @@ function SocialEditor({
               />
             </Field>
             {data.registrationMode === "form" && (
-              <>
-                <h3>Registration form</h3>
-                <p>
-                  Ask only for basic contact and attendance details. Do not
-                  request passwords, PINs or sensitive information. Forms are
-                  locked after registration begins.
-                </p>
+              <section className="a-card a-form-section">
+                <div className="a-row between" style={{ gap: 10 }}>
+                  <div>
+                    <h3 style={{ margin: 0 }}>Registration form</h3>
+                    <small className="a-muted">
+                      Basic contact &amp; attendance only. Locked after first
+                      registration.
+                    </small>
+                  </div>
+                </div>
                 <fieldset disabled={data.registrationCount > 0}>
-                  {data.fields.map((f: Row) => (
+                  {data.fields.map((f: Row, idx: number) => (
                     <div
-                      className="a-card"
+                      className="a-question-card"
                       key={f.id}
-                      style={{ marginBottom: 12 }}
                     >
+                      <div className="a-row between" style={{ marginBottom: 6 }}>
+                        <small className="a-muted">Question {idx + 1}</small>
+                        <button
+                          type="button"
+                          className="a-text-link"
+                          onClick={() =>
+                            patch({
+                              fields: data.fields.filter(
+                                (p: Row) => p.id !== f.id,
+                              ),
+                            })
+                          }
+                        >
+                          Remove
+                        </button>
+                      </div>
                       <Field label="Question">
                         <input
                           maxLength={100}
@@ -957,7 +999,7 @@ function SocialEditor({
                           />
                         </Field>
                       )}
-                      <label className="a-row">
+                      <label className="a-check-row" style={{ marginBottom: 0 }}>
                         <input
                           type="checkbox"
                           checked={f.required}
@@ -965,20 +1007,8 @@ function SocialEditor({
                             changeField(f.id, { required: e.target.checked })
                           }
                         />
-                        Required
+                        <span>Required</span>
                       </label>
-                      <Button
-                        secondary
-                        onClick={() =>
-                          patch({
-                            fields: data.fields.filter(
-                              (p: Row) => p.id !== f.id,
-                            ),
-                          })
-                        }
-                      >
-                        Remove question
-                      </Button>
                     </div>
                   ))}
                   <Button
@@ -999,37 +1029,39 @@ function SocialEditor({
                       })
                     }
                   >
+                    <Plus size={16} />
                     Add question
                   </Button>
                 </fieldset>
-              </>
+              </section>
             )}
           </>
         )}
       </fieldset>
       <Notice error={error} />
-      <details className="a-rules-toggle">
-        <summary>Community guidelines</summary>
-        <p>{publishingRules}</p>
-      </details>
-      <label className="a-check-row">
-        <input
-          type="checkbox"
-          checked={acceptedRules}
-          disabled={busy || uncertain}
-          onChange={(e) => setAcceptedRules(e.target.checked)}
-        />
-        <span>
-          I accept the{" "}
-          <a href="/terms" target="_blank" rel="noreferrer">
-            Terms &amp; Guidelines
-          </a>
-          .
-        </span>
-      </label>
-      <Button
-        style={{ marginTop: 24 }}
-        disabled={busy || uploading || !acceptedRules}
+      <section className="a-report-box" style={{ marginTop: 18 }}>
+        <details className="a-rules-toggle" style={{ marginTop: 0 }}>
+          <summary>Community guidelines</summary>
+          <p>{publishingRules}</p>
+        </details>
+        <label className="a-check-row">
+          <input
+            type="checkbox"
+            checked={acceptedRules}
+            disabled={busy || uncertain}
+            onChange={(e) => setAcceptedRules(e.target.checked)}
+          />
+          <span>
+            I accept the{" "}
+            <a href="/terms" target="_blank" rel="noreferrer">
+              Terms &amp; Guidelines
+            </a>
+            .
+          </span>
+        </label>
+        <Button
+          style={{ width: "100%" }}
+          disabled={busy || uploading || !acceptedRules}
         onClick={async () => {
           setBusy(true);
           if (!acceptedRules) { setBusy(false); return; }
@@ -1066,7 +1098,8 @@ function SocialEditor({
           : uncertain
             ? "Retry submission confirmation"
             : "Submit for approval"}
-      </Button>
+        </Button>
+      </section>
       {location && (
         <LocationDialog
           title="Event venue"

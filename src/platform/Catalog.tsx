@@ -9,7 +9,9 @@ import {
   Share2,
   ShoppingBag,
   Store,
-  Grid2X2,
+  Smartphone,
+  Shirt,
+  UtensilsCrossed,
   Bookmark,
   ShoppingBasket,
   MapPin,
@@ -569,8 +571,10 @@ export function Catalog({ kind }: { kind: Kind }) {
                 >
                   {d === "shoes" ? (
                     <ShoeIcon size={18} />
+                  ) : d === "fashion" ? (
+                    <Shirt size={18} />
                   ) : (
-                    <Grid2X2 size={18} />
+                    <Smartphone size={18} />
                   )}{" "}
                   {label(d)}
                 </button>
@@ -586,7 +590,11 @@ export function Catalog({ kind }: { kind: Kind }) {
                 className={tab === "shopping" ? "active" : ""}
                 onClick={() => setTab("shopping")}
               >
-                <Grid2X2 size={18} />
+                {kind === "food" ? (
+                  <UtensilsCrossed size={18} />
+                ) : (
+                  <ShoppingBag size={18} />
+                )}
                 Shopping
               </button>
               {kind === "grocery" && (
