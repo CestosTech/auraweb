@@ -57,8 +57,8 @@ export function Gallery({ item }: { item: Row }) {
 function GalleryVideo({ src }: { src: string }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true),
-    [playing, setPlaying] = useState(true),
-    [loading, setLoading] = useState(true),
+    [playing, setPlaying] = useState(false),
+    [loading, setLoading] = useState(false),
     [progress, setProgress] = useState(0);
   useEffect(() => {
     const video = ref.current!;
@@ -87,7 +87,6 @@ function GalleryVideo({ src }: { src: string }) {
         src={src}
         playsInline
         preload="none"
-        autoPlay
         muted={muted}
         loop
         style={{ width: "100%", height: "100%", objectFit: "cover" }}

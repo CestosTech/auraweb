@@ -39,7 +39,6 @@ import { auraShareUrl } from './share';
 import { useSeo } from './seo';
 import { Button, Dialog, Field, Notice, Photo, Select } from './ui';
 import { MediaEditor } from './EditorFields';
-import { demoServices } from './demoServices';
 
 const categories = ['Carpenter','Electrician','Plumber','Mechanic','Welder','Mason & Builder','Painter','Roofer','AC & Refrigeration','Appliance Repair','Cleaner','Barber & Hair Stylist','Tailor','Caterer','Photographer & Videographer','Tutor','Phone & Computer Repair','Generator Repair','Gardener & Landscaper','Mover & Haulage','Pest Control','Auto Body Repair'];
 const categoryIcons: Record<string, React.ComponentType<{ size?: number }>> = {
@@ -97,8 +96,9 @@ export function ServicesMarket() {
       .catch(() => {});
     return () => { alive = false; };
   }, [feed.data, feed.loading, location.search]);
-  const demoMode = import.meta.env.VITE_DEMO_SERVICES === 'true';
-  const sourceItems = [...(demoMode ? demoServices : []), ...(feed.data?.items || []), ...extra];
+  const sourceItems = [...(feed.data?.items || []), ...extra].map(item =>
+    item.demo || item.qaOnly ? { ...item, demo: true } : item,
+  );
   const rows = sourceItems.filter(r => (!query || `${r.title} ${r.description} ${r.category} ${r.provider?.name} ${r.locality}`.toLowerCase().includes(query.toLowerCase())) && (!category || r.category===category) && (!county || r.county===county) && (!locality || r.locality===locality));
   useEffect(() => setVisibleCount(24), [query, category, county, locality]);
   useEffect(() => {
@@ -121,7 +121,7 @@ export function ServicesMarket() {
   }, [visibleCount, rows.length, next, paging, pageError]);
   const create = async () => { if (!(await requireLogin())) return; setProfile(true); };
   return <section className="a-page a-services-page">
-    <div className="a-services-hero"><span className="a-services-kicker"><Hammer size={15}/> AURA SERVICES</span><h1>Good work, close by.</h1><p>Find trusted local people for the jobs that matter.</p>{demoMode&&<p className="a-services-demo-note">Preview profiles are clearly marked and cannot be contacted or rated.</p>}<Button className="a-services-cta" onClick={()=>void create()}><Plus size={17}/> Offer a service</Button><div className="a-services-search"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search services or skills"/><button aria-label="Filters" onClick={()=>setFilters(true)}><SlidersHorizontal/></button></div><div className="a-services-chips">{categories.slice(0,10).map(c=><button key={c} className={category===c?'active':''} onClick={()=>setCategory(category===c?'':c)}><CategoryIcon category={c}/>{c}</button>)}</div></div>
+    <div className="a-services-hero"><span className="a-services-kicker"><Hammer size={15}/> AURA SERVICES</span><h1>Good work, close by.</h1><p>Find trusted local people for the jobs that matter.</p><Button className="a-services-cta" onClick={()=>void create()}><Plus size={17}/> Offer a service</Button><div className="a-services-search"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search services or skills"/><button aria-label="Filters" onClick={()=>setFilters(true)}><SlidersHorizontal/></button></div><div className="a-services-chips">{categories.slice(0,10).map(c=><button key={c} className={category===c?'active':''} onClick={()=>setCategory(category===c?'':c)}><CategoryIcon category={c}/>{c}</button>)}</div></div>
     <div className="a-services-heading"><div><h2>{rows.length} local services</h2><p>Skilled people and businesses around Liberia</p></div></div>
     {feed.loading && <div className="a-empty">Finding local services…</div>}{feed.error && <Notice error={feed.error} retry={feed.reload}/>}
     {!feed.loading && !feed.error && rows.length===0 && <div className="a-services-empty"><BriefcaseBusiness/><h3>{(feed.data?.items||[]).length ? 'No services match those filters.' : 'Great local work starts here.'}</h3><p>{(feed.data?.items||[]).length ? 'Try a different skill or county.' : 'Create a work profile and help your neighbours find you.'}</p>{!(feed.data?.items||[]).length && <Button onClick={()=>void create()}>Create work profile</Button>}</div>}
