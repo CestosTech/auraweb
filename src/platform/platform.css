@@ -336,7 +336,10 @@ body::-webkit-scrollbar,
 .a-page {
   width: min(1240px, 100%);
   margin: auto;
-  padding: 36px 24px 100px;
+  padding: 20px 24px 100px;
+}
+.a-page > .a-section:first-child {
+  margin-top: 4px;
 }
 .a-page.narrow {
   max-width: 640px;
