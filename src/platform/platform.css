@@ -1421,14 +1421,14 @@ button.a-card .a-text-link {
   overflow: auto;
   max-height: 75dvh;
 }
-.a-conversations button {
+.a-conversations button:not(.a-icon) {
   display: block;
   text-align: left;
   width: 100%;
   padding: 16px 10px;
   border-radius: 14px;
 }
-.a-conversations button.active {
+.a-conversations button:not(.a-icon).active {
   background: #e7f5eb;
 }
 .a-conversations small {
