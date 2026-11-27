@@ -1068,6 +1068,9 @@ button.a-card .a-text-link {
 .a-section-heading h2 {
   margin: 0;
 }
+.a-gallery-wrap {
+  position: relative;
+}
 .a-gallery {
   display: flex;
   overflow: auto;
@@ -1077,6 +1080,45 @@ button.a-card .a-text-link {
   background: #e7eee9;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+.a-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(18, 25, 21, 0.72);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.a-gallery-nav.prev { left: 10px; }
+.a-gallery-nav.next { right: 10px; }
+.a-gallery-nav:disabled { opacity: 0.25; cursor: default; }
+.a-gallery-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+.a-gallery-dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #c8d1ca;
+  cursor: pointer;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+.a-gallery-dots button.active {
+  width: 20px;
+  background: var(--green);
 }
 .a-gallery::-webkit-scrollbar {
   display: none;
@@ -2373,10 +2415,9 @@ html[data-theme="dark"] .a-dialog { --surface:#151a17; }
 .a-service-check input { width:18px;height:18px; }
 .a-service-form .a-progress { margin:0; }
 .a-service-detail { display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:26px;padding:12px 4px 20px;align-items:start; }
-.a-service-detail-media>img,.a-service-detail-media>.a-photo-fallback { width:100%;min-height:280px;max-height:520px;object-fit:cover;border-radius:18px; }
-.a-service-detail-media .a-grid { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); }
-.a-service-detail-media .a-grid img { width:100%;height:180px;object-fit:cover;border-radius:14px; }
-.a-service-detail-media video { width:100%;max-height:340px;margin-top:12px;border-radius:16px;background:#111; }
+.a-service-detail-media { min-width:0; }
+.a-service-detail-media .a-gallery { width:100%;margin:0;border-radius:20px; }
+.a-service-detail-media .a-gallery > button,.a-service-detail-media .a-gallery > div { height:min(48dvh,420px); }
 .a-service-detail-copy { min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:12px; }
 .a-service-detail-copy .a-detail-vendor { width:100%;box-sizing:border-box; }
 .a-service-cat { color:var(--green);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em; }

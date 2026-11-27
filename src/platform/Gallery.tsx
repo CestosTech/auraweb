@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Volume2, VolumeX, Play, Pause, LoaderCircle } from "lucide-react";
+import { Volume2, VolumeX, Play, Pause, LoaderCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, Photo } from "./ui";
 import { Row } from "./model";
 export function Gallery({ item }: { item: Row }) {
   const [full, setFull] = useState<string | null>(null);
+  const [index, setIndex] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
   const primary = item.image || item.heroImage || item.thumbnail;
   const media = (
     item.images?.length ? item.images : primary ? [primary] : []
@@ -14,32 +16,88 @@ export function Gallery({ item }: { item: Row }) {
       0,
       { url: item.videoUrl, video: true },
     );
+  useEffect(() => {
+    setIndex(0);
+    trackRef.current?.scrollTo?.({ left: 0, behavior: "auto" });
+  }, [item.id]);
+  const goTo = (next: number) => {
+    const el = trackRef.current;
+    if (!el || !media.length) return;
+    const clamped = Math.max(0, Math.min(media.length - 1, next));
+    setIndex(clamped);
+    el.scrollTo?.({ left: el.clientWidth * clamped, behavior: "smooth" });
+  };
   return (
     <>
-      <div className="a-gallery">
-        {media.length ? (
-          media.map((m: any, i: number) =>
-            m.video ? (
-              <GalleryVideo key={m.url} src={m.url} />
-            ) : (
-              <button
-                key={m.url}
-                onClick={() => setFull(m.url)}
-                aria-label={`View image ${i + 1} full screen`}
-              >
-                <Photo src={m.url} alt={item.title || item.name} />
-              </button>
-            ),
-          )
-        ) : (
-          <button>
-            <Photo alt="No item photos yet" />
-          </button>
+      <div className="a-gallery-wrap">
+        <div
+          ref={trackRef}
+          className="a-gallery"
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            if (el.clientWidth > 0) {
+              setIndex(Math.round(el.scrollLeft / el.clientWidth));
+            }
+          }}
+        >
+          {media.length ? (
+            media.map((m: any, i: number) =>
+              m.video ? (
+                <GalleryVideo key={m.url} src={m.url} />
+              ) : (
+                <button
+                  key={m.url}
+                  onClick={() => setFull(m.url)}
+                  aria-label={`View image ${i + 1} full screen`}
+                >
+                  <Photo src={m.url} alt={item.title || item.name} />
+                </button>
+              ),
+            )
+          ) : (
+            <button>
+              <Photo alt="No item photos yet" />
+            </button>
+          )}
+        </div>
+        {media.length > 1 && (
+          <>
+            <button
+              type="button"
+              className="a-gallery-nav prev"
+              aria-label="Previous media"
+              disabled={index <= 0}
+              onClick={() => goTo(index - 1)}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              className="a-gallery-nav next"
+              aria-label="Next media"
+              disabled={index >= media.length - 1}
+              onClick={() => goTo(index + 1)}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </>
         )}
       </div>
+      {media.length > 1 && (
+        <div className="a-gallery-dots" aria-hidden="true">
+          {media.map((m: any, i: number) => (
+            <button
+              type="button"
+              key={m.url + i}
+              className={i === index ? "active" : ""}
+              onClick={() => goTo(i)}
+            />
+          ))}
+        </div>
+      )}
       <div className="a-gallery-count">
         {media.length > 1
-          ? `${media.length} ${item.videoUrl ? "photos & video" : "photos"} · Swipe to explore`
+          ? `${index + 1} / ${media.length} · ${item.videoUrl ? "Photos & video" : "Photos"}`
           : "Tap photo to enlarge"}
       </div>
       {full && (
