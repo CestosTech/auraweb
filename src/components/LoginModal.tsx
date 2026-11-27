@@ -21,6 +21,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
   const verifier = useRef<RecaptchaVerifier | null>(null);
   const container = useRef<HTMLDivElement>(null);
+  const normalizeLiberianPhone = (raw: string) => {
+    let value = raw.trim();
+    if (!/^[+0-9\s().-]+$/.test(value)) return null;
+    value = value.replace(/[\s().-]/g, '');
+    if (value.startsWith('+')) {
+      if (!value.startsWith('+231')) return null;
+      value = value.slice(4);
+    } else if (value.startsWith('00')) {
+      if (!value.startsWith('00231')) return null;
+      value = value.slice(5);
+    } else if (value.length === 12 && value.startsWith('231')) {
+      value = value.slice(3);
+    }
+    if (value.length === 10 && value.startsWith('0')) value = value.slice(1);
+    return /^[1-9]\d{8}$/.test(value) ? `+231${value}` : null;
+  };
   useEffect(() => {
     if (!isOpen) { verifier.current?.clear(); verifier.current = null; setConfirmation(null); setCode(''); setError(''); }
     return () => { verifier.current?.clear(); verifier.current = null; };
@@ -51,11 +67,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         if (!/^\d{6}$/.test(code.trim())) { setError('Enter the six-digit SMS code.'); return; }
         await confirmation.confirm(code.trim()); finish();
       } else {
-        if (!/^\+[1-9]\d{7,14}$/.test(phone.trim())) { setError('Enter a phone number with its country code, such as +231…'); return; }
+        const liberianPhone = normalizeLiberianPhone(phone);
+        if (!liberianPhone) { setError('Enter a valid Liberian phone number. The +231 prefix is added automatically.'); return; }
         if (!container.current) throw new Error('Verification control unavailable');
         verifier.current?.clear();
         verifier.current = new RecaptchaVerifier(auth, container.current, { size: 'normal' });
-        setConfirmation(await signInWithPhoneNumber(auth, phone.trim(), verifier.current));
+        setConfirmation(await signInWithPhoneNumber(auth, liberianPhone, verifier.current));
       }
     } catch (value) { failure(value); verifier.current?.clear(); verifier.current = null; }
     finally { setBusy(false); }
@@ -67,7 +84,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       <button type="button" disabled={busy} onClick={google} className="w-full border rounded-xl p-3 font-semibold">Continue with Google</button>
       <button type="button" disabled={busy || !!confirmation} onClick={() => setPhoneMode(!phoneMode)} className="w-full p-2">Continue with phone</button>
       {phoneMode && <>
-        <label className="block">Phone number<input required type="tel" autoComplete="tel" placeholder="+231…" disabled={busy || !!confirmation} value={phone} onChange={e => setPhone(e.target.value)} className="border rounded-xl p-3 w-full" /></label>
+        <label className="block">Phone number<div className="mt-1 flex overflow-hidden rounded-xl border"><span className="flex items-center border-r bg-gray-50 px-3 text-gray-700">+231</span><input required type="tel" autoComplete="tel-national" inputMode="tel" placeholder="886 123 456" disabled={busy || !!confirmation} value={phone} onChange={e => setPhone(e.target.value)} className="min-w-0 flex-1 p-3 outline-none" /></div></label>
         {confirmation && <label className="block">SMS verification code<input required autoComplete="one-time-code" inputMode="numeric" value={code} disabled={busy} onChange={e => setCode(e.target.value)} className="border rounded-xl p-3 w-full" /></label>}
         <p className="text-sm text-gray-600">Firebase sends an SMS to verify your number. Message rates may apply. Google uses phone numbers for abuse prevention.</p>
         <button disabled={busy} className="w-full rounded-xl bg-[#06C167] text-white font-bold p-3">{busy ? 'Please wait…' : confirmation ? 'Verify code' : 'Send SMS code'}</button>

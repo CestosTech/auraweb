@@ -7,12 +7,14 @@ import { usePlatform, go } from "./context";
 import { Button, Dialog, Field, Notice, Select } from "./ui";
 import { LocationDialog } from "./Location";
 import { disablePush } from "./Notifications";
+import { auraShareUrl } from "./share";
 import { Row } from "./model";
 export function Account() {
   const { user, logout } = useAuth(),
     { requireLogin, toast, confirm, theme, setTheme } = usePlatform(),
     delivery = useRemote(user ? "/v1/me/delivery" : null),
     preferences = useRemote(user ? "/v1/me/food-preferences" : null),
+    auraPoints = useRemote(user ? "/v1/aura-points" : null),
     [edit, setEdit] = useState(false),
     [map, setMap] = useState(false),
     [details, setDetails] = useState<Row>({
@@ -45,6 +47,14 @@ export function Account() {
       setBusy(false);
     }
   };
+  const invite = async () => {
+    if (!(await requireLogin())) return;
+    try {
+      const url = await auraShareUrl(new URL("/", location.origin).toString());
+      if (navigator.share) await navigator.share({ title: "Join me on Aura", text: "Discover local businesses, services and events with me.", url });
+      else { await navigator.clipboard.writeText(url); toast("Invite link copied"); }
+    } catch (e) { if ((e as Error)?.name !== "AbortError") setError(friendly(e)); }
+  };
   return (
     <section className="a-page narrow">
       <h1>Your account</h1>
@@ -69,6 +79,14 @@ export function Account() {
       </div>
       {user && (
         <>
+          <section className="a-card a-aura-points-card">
+            <div className="a-aura-points-head"><span>✦</span><div><small>AURA REWARDS</small><h2>Aura Points</h2></div><strong>{auraPoints.loading ? "…" : Number(auraPoints.data?.balance || 0).toLocaleString()}</strong></div>
+            <p>Earn points when your posts are approved, friends visit from your invite, and your orders are fulfilled.</p>
+            <div className="a-aura-points-periods"><span>This week <b>{Number(auraPoints.data?.weekPoints || 0)} pts</b></span><span>This month <b>{Number(auraPoints.data?.monthPoints || 0)} pts</b></span></div>
+            <div className="a-aura-points-actions"><Button onClick={() => void invite()}>Invite a friend</Button><Button secondary onClick={auraPoints.reload} disabled={auraPoints.loading}>Refresh</Button></div>
+            {auraPoints.error && <p className="a-aura-points-error" role="status">{auraPoints.error}</p>}
+            {!!auraPoints.data?.recent?.length && <div className="a-aura-points-recent"><h3>Recent earnings</h3>{auraPoints.data.recent.slice(0, 5).map((entry: Row) => <div className="a-aura-points-entry" key={entry.id}><span><b>{({signup:"Welcome to Aura",share_visit:"Friend visited from your link",post:"Post approved",order:"Order fulfilled"} as Record<string,string>)[entry.type] || "Aura activity"}</b><small>{entry.earnedAt ? new Date(Number(entry.earnedAt)).toLocaleDateString() : ""}</small></span><strong>+{Number(entry.points || 0)} pts</strong></div>)}</div>}
+          </section>
           <section className="a-section a-card">
             <h3>Ready for your next delivery</h3>
             <p>{details.phone || "Add a delivery phone number"}</p>

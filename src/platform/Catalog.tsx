@@ -9,7 +9,9 @@ import {
   Share2,
   ShoppingBag,
   Store,
-  Grid2X2,
+  Smartphone,
+  Shirt,
+  UtensilsCrossed,
   Bookmark,
   ShoppingBasket,
   MapPin,
@@ -19,6 +21,8 @@ import { command } from "../utils/commandApi";
 import { useAuth } from "../context/AuthContext";
 import { useRemote, friendly } from "./hooks";
 import { usePlatform, go } from "./context";
+import { auraShareUrl } from "./share";
+import { useSeo } from "./seo";
 import {
   Kind,
   Row,
@@ -111,25 +115,51 @@ export function Catalog({ kind }: { kind: Kind }) {
       setDetail(found);
       return;
     }
-    if (["property", "motor", "lifestyle"].includes(kind)) {
-      let alive = true;
-      void command(
-        `/v1/shared-listings/${kind}/${encodeURIComponent(id)}`,
-        undefined,
-        undefined,
-        false,
-      )
-        .then((r) => {
-          if (alive) setDetail(r.item);
-        })
-        .catch((e) => {
+    if (["food", "grocery"].includes(kind) && feed.loading) return;
+    let alive = true;
+    void (async () => {
+      try {
+        const r = await command(
+          `/v1/shared-listings/${kind}/${encodeURIComponent(id)}`,
+          undefined,
+          undefined,
+          false,
+        );
+        if (alive && r?.item) {
+          setDetail(r.item);
+          return;
+        }
+      } catch (e) {
+        if (!["food", "grocery"].includes(kind)) {
           if (alive) setError(friendly(e));
-        });
-      return () => {
-        alive = false;
-      };
-    }
-  }, [items, location.search]);
+          return;
+        }
+      }
+      if (!["food", "grocery"].includes(kind)) return;
+      let pageToken = cursor;
+      for (let page = 0; page < 5 && pageToken && alive; page++) {
+        try {
+          const next = await command(
+            `/v1/catalog/${catalogs[kind]}?pageToken=${encodeURIComponent(pageToken)}`,
+            undefined,
+            undefined,
+            false,
+          );
+          const match = (next.items || []).find((i: Row) => i.id === id);
+          if (match) {
+            if (alive) setDetail(match);
+            return;
+          }
+          pageToken = next.nextPageToken || null;
+        } catch {
+          break;
+        }
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [items, location.search, kind, feed.loading]);
   useEffect(() => {
     if (
       kind !== "food" ||
@@ -569,8 +599,10 @@ export function Catalog({ kind }: { kind: Kind }) {
                 >
                   {d === "shoes" ? (
                     <ShoeIcon size={18} />
+                  ) : d === "fashion" ? (
+                    <Shirt size={18} />
                   ) : (
-                    <Grid2X2 size={18} />
+                    <Smartphone size={18} />
                   )}{" "}
                   {label(d)}
                 </button>
@@ -586,7 +618,11 @@ export function Catalog({ kind }: { kind: Kind }) {
                 className={tab === "shopping" ? "active" : ""}
                 onClick={() => setTab("shopping")}
               >
-                <Grid2X2 size={18} />
+                {kind === "food" ? (
+                  <UtensilsCrossed size={18} />
+                ) : (
+                  <ShoppingBag size={18} />
+                )}
                 Shopping
               </button>
               {kind === "grocery" && (
@@ -633,7 +669,14 @@ export function Catalog({ kind }: { kind: Kind }) {
           kind={kind}
           items={items}
           shops={shopRows}
-          onClose={() => setDetail(null)}
+          onClose={() => {
+            setDetail(null);
+            if (new URLSearchParams(location.search).has("item")) {
+              const u = new URL(location.href);
+              u.searchParams.delete("item");
+              history.replaceState(null, "", u.pathname + u.search + u.hash);
+            }
+          }}
           onSelect={setDetail}
         />
       )}
@@ -778,7 +821,37 @@ export function ItemDetail({
       false,
     ),
     shop = shops.find((s) => s.id === merchantOf(item, kind)),
-    d = deal(item);
+    d = deal(item),
+    catalogPaths = {
+      food: "/",
+      grocery: "/groceries",
+      property: "/homes",
+      motor: "/motors",
+      lifestyle: "/lifestyle",
+    },
+    itemImage = imageOf(item);
+  useSeo({
+    title: nameOf(item),
+    description:
+      item.description ||
+      `${nameOf(item)} — ${money(d.price)}${period(item)} on Aura Liberia.`,
+    image: itemImage || undefined,
+    url: `${location.origin}${catalogPaths[kind]}?item=${encodeURIComponent(item.id)}`,
+    type: "product",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: nameOf(item),
+      description: item.description || nameOf(item),
+      ...(itemImage ? { image: [itemImage] } : {}),
+      offers: {
+        "@type": "Offer",
+        priceCurrency: "USD",
+        price: d.price,
+        availability: "https://schema.org/InStock",
+      },
+    },
+  });
   useEffect(() => {
     setQty(1);
     setAddons([]);
@@ -793,17 +866,16 @@ export function ItemDetail({
     } catch {}
   }, [item.id]);
   const share = async () => {
-    const paths = {
-      food: "/",
-      grocery: "/groceries",
-      property: "/homes",
-      motor: "/motors",
-      lifestyle: "/lifestyle",
-    };
-    const url =
-      location.origin + paths[kind] + "?item=" + encodeURIComponent(item.id);
+    const rawUrl =
+      location.origin + catalogPaths[kind] + "?item=" + encodeURIComponent(item.id);
+    const url = await auraShareUrl(rawUrl);
     try {
-      if (navigator.share) await navigator.share({ title: nameOf(item), url });
+      if (navigator.share)
+        await navigator.share({
+          title: nameOf(item),
+          text: `${nameOf(item)} — ${money(d.price)}${period(item)} on Aura Liberia`,
+          url,
+        });
       else {
         await navigator.clipboard.writeText(url);
         toast("Item link copied.");

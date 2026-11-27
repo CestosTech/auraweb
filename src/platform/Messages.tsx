@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ArrowLeft,
   Image as ImageIcon,
   Video,
   Mic,
@@ -93,14 +94,30 @@ export function Inbox({ initialId }: { initialId?: string }) {
     void requireLogin();
   }, []);
   useEffect(() => setId(initialId || ""), [initialId]);
+  const goBackToApp = () => {
+    if (window.history.length > 1) window.history.back();
+    else go("/");
+  };
   return (
     <section className="a-page">
-      <span className="a-eyebrow">YOUR CONVERSATIONS</span>
-      <h1>A little hello goes a long way.</h1>
       <Notice error={inbox.error} retry={inbox.reload} />
-      <div className="a-message-layout">
+      <div
+        className={
+          id ? "a-message-layout has-chat" : "a-message-layout"
+        }
+      >
         <aside className="a-conversations">
-          <h3>Messages</h3>
+          <div className="a-row" style={{ marginBottom: 12 }}>
+            <button
+              className="a-icon"
+              style={{ borderRadius: "50%" }}
+              aria-label="Back to app"
+              onClick={goBackToApp}
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h3 style={{ margin: 0 }}>Messages</h3>
+          </div>
           {inbox.loading ? (
             <Busy />
           ) : (
@@ -113,8 +130,10 @@ export function Inbox({ initialId }: { initialId?: string }) {
                   go("/messages/" + c.id);
                 }}
               >
-                <strong>{c.title}</strong>
-                {c.unread && <span className="a-badge">New</span>}
+                <div className="a-row between">
+                  <strong>{c.title}</strong>
+                  {c.unread && <span className="a-badge">New</span>}
+                </div>
                 <small>{c.lastMessage || "Start a conversation"}</small>
               </button>
             ))
@@ -133,16 +152,22 @@ export function Inbox({ initialId }: { initialId?: string }) {
               (inbox.data?.conversations || []).find((c: Row) => c.id === id)
                 ?.title || "Conversation"
             }
+            onBack={() => {
+              setId("");
+              go("/messages");
+            }}
             onRead={inbox.reload}
           />
         ) : (
-          <Empty title="Choose a conversation">
-            <MessageCircle size={36} />
-            <p>
-              Your listing inquiries and vendor order requests stay together
-              here.
-            </p>
-          </Empty>
+          <div className="a-chat-placeholder">
+            <Empty title="Choose a conversation">
+              <MessageCircle size={36} />
+              <p>
+                Your listing inquiries and vendor order requests stay together
+                here.
+              </p>
+            </Empty>
+          </div>
         )}
       </div>
     </section>
@@ -151,10 +176,12 @@ export function Inbox({ initialId }: { initialId?: string }) {
 function Conversation({
   id,
   title,
+  onBack,
   onRead,
 }: {
   id: string;
   title: string;
+  onBack: () => void;
   onRead: () => void;
 }) {
   const { user } = useAuth(),
@@ -360,7 +387,17 @@ function Conversation({
   };
   return (
     <div className="a-chat">
-      <header>{title}</header>
+      <header className="a-row">
+        <button
+          className="a-icon a-chat-back"
+          style={{ borderRadius: "50%" }}
+          aria-label="Back to messages"
+          onClick={onBack}
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <span>{title}</span>
+      </header>
       <div className="a-chat-history" ref={history}>
         {messages.data?.hasMore && (
           <Button secondary onClick={loadOlder}>

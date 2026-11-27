@@ -41,7 +41,9 @@ const Driver = lazy(() =>
 );
 import { Social } from "./Social";
 import { Account } from "./Account";
+import { ServicesMarket } from "./Services";
 import { LegalPage, LegalLinks } from "./Legal";
+import { useSeo } from "./seo";
 import "./platform.css";
 const nav = [
   ["/events", "Events"],
@@ -51,6 +53,7 @@ const nav = [
   ["/homes", "Homes"],
   ["/motors", "Motors"],
   ["/lifestyle", "Lifestyle"],
+  ["/services", "Services"],
 ];
 export default function WebPlatform() {
   return mapsKey ? (
@@ -104,6 +107,18 @@ function Shell() {
     return () => removeEventListener("popstate", f);
   }, []);
   useEffect(() => {
+    const code = new URLSearchParams(location.search).get("aura_ref");
+    if (!code || !/^[A-Za-z0-9_-]{1,128}$/.test(code)) return;
+    const key = `aura_ref_seen_${code}`, pendingKey = `${key}_pending`;
+    try {
+      if (sessionStorage.getItem(key) || sessionStorage.getItem(pendingKey)) return;
+      sessionStorage.setItem(pendingKey, "1");
+    } catch {}
+    void command("/v1/aura-points/visit", { code }, undefined, false).then(() => {
+      try { sessionStorage.setItem(key, "1"); sessionStorage.removeItem(pendingKey); } catch {}
+    }).catch(() => { try { sessionStorage.removeItem(pendingKey); } catch {} });
+  }, [url]);
+  useEffect(() => {
     try {
       localStorage.setItem("aura_shared_cart", JSON.stringify(cart));
     } catch {
@@ -127,6 +142,7 @@ function Shell() {
   useEffect(() => {
     void setPushAccount(user?.uid || "").catch(() => {});
     if (user) {
+      void command("/v1/aura-points").catch(() => {});
       setLogin(false);
       waiting.current.splice(0).forEach((f) => f(true));
     }
@@ -224,7 +240,81 @@ function Shell() {
       "driver",
       "live-payments",
       "account",
+      "work-profile",
     ].includes(parts[0]);
+  const routeSeoMap: Record<string, { title?: string; description: string }> = {
+    "": {
+      description:
+        "Order food, local dishes, and everyday essentials from kitchens across Monrovia and Liberia on Aura.",
+    },
+    groceries: {
+      title: "Groceries & Supermarkets",
+      description:
+        "Shop fresh groceries, pantry staples, and household supplies from local supermarkets across Liberia.",
+    },
+    homes: {
+      title: "Homes & Real Estate",
+      description:
+        "Browse apartments, houses, and commercial spaces for rent or sale across Monrovia and Liberia.",
+    },
+    motors: {
+      title: "Motors & Vehicles",
+      description:
+        "Discover cars, bikes, and vehicles from trusted sellers across Liberia on Aura.",
+    },
+    lifestyle: {
+      title: "Lifestyle, Electronics & Fashion",
+      description:
+        "Shop electronics, phones, fashion, shoes, and lifestyle products delivered across Liberia.",
+    },
+    services: {
+      title: "Local Services",
+      description:
+        "Hire trusted plumbers, electricians, mechanics, tailors, and skilled professionals near you in Liberia.",
+    },
+    events: {
+      title: "Events",
+      description:
+        "Discover upcoming workshops, community gatherings, and local events across Liberia.",
+    },
+    community: {
+      title: "Community",
+      description:
+        "Connect with local announcements, discussions, and community updates across Liberia.",
+    },
+    live: {
+      title: "Live Market",
+      description:
+        "Watch live shopping broadcasts from local merchants and shop featured products in real time.",
+    },
+    rides: {
+      title: "Rides",
+      description:
+        "Book reliable rides across Monrovia and Liberia with upfront route estimates.",
+    },
+  };
+  const routeKey = parts[0] || "";
+  const routeMeta = routeSeoMap[routeKey];
+  const hasDetailChild =
+    ((routeKey === "events" || routeKey === "community" || routeKey === "live") &&
+      Boolean(parts[1])) ||
+    (["", "groceries", "homes", "motors", "lifestyle", "services"].includes(
+      routeKey,
+    ) &&
+      new URLSearchParams(url.split("?")[1] || "").has("item")) ||
+    ["terms", "terms-and-conditions", "privacy", "privacy-policy"].includes(
+      routeKey,
+    );
+  useSeo(
+    hasDetailChild
+      ? null
+      : {
+          title: privateRoute ? "Account" : routeMeta?.title,
+          description: routeMeta?.description,
+          noindex: privateRoute,
+          url: `${typeof window !== "undefined" ? window.location.origin : ""}${path}`,
+        },
+  );
   useEffect(() => {
     if (privateRoute && !user) void requireLogin();
   }, [privateRoute, user?.uid, path]);
@@ -277,6 +367,7 @@ function Shell() {
   else if (parts[0] === "rides") page = <Rides />;
   else if (parts[0] === "driver") page = <Driver />;
   else if (parts[0] === "account") page = <Account />;
+  else if (parts[0] === "services") page = <ServicesMarket />;
   else
     page = (
       <Catalog

@@ -181,16 +181,14 @@ export function Rides() {
         </>
       ) : (
         <div className="a-card">
-          <Button secondary onClick={() => setChoosing("pickup")}>
-            {pickup?.address || "Choose pickup"}
-          </Button>
-          <Button
-            secondary
-            style={{ marginTop: 12 }}
-            onClick={() => setChoosing("destination")}
-          >
-            {destination?.address || "Choose destination"}
-          </Button>
+          <div className="a-stack" style={{ marginBottom: 12 }}>
+            <Button secondary onClick={() => setChoosing("pickup")}>
+              {pickup?.address || "Choose pickup"}
+            </Button>
+            <Button secondary onClick={() => setChoosing("destination")}>
+              {destination?.address || "Choose destination"}
+            </Button>
+          </div>
           <Select
             label="Vehicle"
             value={vehicle}

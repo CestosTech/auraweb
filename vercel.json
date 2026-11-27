@@ -1,6 +1,38 @@
 {
   "rewrites": [
     {
+      "source": "/events/:id",
+      "destination": "/api/share-meta?route=events&id=:id"
+    },
+    {
+      "source": "/community/:id",
+      "destination": "/api/share-meta?route=community&id=:id"
+    },
+    {
+      "source": "/live/:id",
+      "destination": "/api/share-meta?route=live&id=:id"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "item"
+        }
+      ],
+      "destination": "/api/share-meta?route=food"
+    },
+    {
+      "source": "/:route(groceries|homes|motors|lifestyle|services|real-estate|supermarket)",
+      "has": [
+        {
+          "type": "query",
+          "key": "item"
+        }
+      ],
+      "destination": "/api/share-meta?route=:route"
+    },
+    {
       "source": "/terms",
       "destination": "/index.html"
     },

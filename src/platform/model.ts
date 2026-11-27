@@ -7,7 +7,7 @@ export const money = (value: number, currency = "USD") =>
     maximumFractionDigits: 2,
   }).format(Number(value) || 0);
 export const imageOf = (item: Row) =>
-  item.images?.[0] || item.image || item.heroImage || "";
+  item.images?.[0] || item.image || item.heroImage || item.thumbnail || "";
 export const nameOf = (item: Row) => String(item.title || item.name || "Item");
 export const label = (value: unknown) =>
   String(value || "")
@@ -89,6 +89,8 @@ export const catalogs = {
   motor: "motor_listings",
   lifestyle: "lifestyle_items",
 } as const;
+export type ServiceKind = 'service';
+export type MarketKind = Kind | ServiceKind;
 export const titles = {
   food: "Shopping",
   grocery: "Groceries",
