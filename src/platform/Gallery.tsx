@@ -4,8 +4,9 @@ import { Dialog, Photo } from "./ui";
 import { Row } from "./model";
 export function Gallery({ item }: { item: Row }) {
   const [full, setFull] = useState<string | null>(null);
+  const primary = item.image || item.heroImage || item.thumbnail;
   const media = (
-    item.images?.length ? item.images : item.image ? [item.image] : []
+    item.images?.length ? item.images : primary ? [primary] : []
   ).map((url: string) => ({ url, video: false }));
   if (item.videoUrl)
     media.splice(

@@ -16,6 +16,7 @@ import {
   Key,
   Wrench,
   Shirt,
+  HardHat,
   ExternalLink
 } from 'lucide-react';
 
@@ -28,6 +29,7 @@ interface AppsHubModalProps {
   onOpenRealEstate?: () => void;
   onOpenLifestyle?: () => void;
   onOpenMotors?: () => void;
+  onOpenServices?: () => void;
 }
 
 export const AppsHubModal: React.FC<AppsHubModalProps> = ({
@@ -39,6 +41,7 @@ export const AppsHubModal: React.FC<AppsHubModalProps> = ({
   onOpenRealEstate,
   onOpenLifestyle,
   onOpenMotors,
+  onOpenServices,
 }) => {
   if (!isOpen) return null;
 
@@ -303,6 +306,12 @@ export const AppsHubModal: React.FC<AppsHubModalProps> = ({
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </div>
               </div>
+            </div>
+          )}
+
+          {onOpenServices && (
+            <div onClick={() => { onClose(); onOpenServices(); }} className="group relative overflow-hidden rounded-2xl border border-amber-200 bg-white p-4 sm:p-5 hover:border-amber-500 hover:shadow-md transition-all cursor-pointer active:scale-[0.99]">
+              <div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3.5"><div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-orange-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0 group-hover:scale-105 transition-transform"><HardHat className="w-6 h-6 stroke-[2.5]" /></div><div><div className="flex items-center gap-2"><h3 className="text-base font-bold text-gray-900 group-hover:text-amber-700 transition-colors">Local Services</h3><span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">Work &amp; skills</span></div><p className="text-xs text-gray-600 mt-1 leading-relaxed">Find trusted local tradespeople and skilled providers, or list the work you do.</p></div></div><div className="w-8 h-8 rounded-full bg-amber-50 group-hover:bg-amber-600 group-hover:text-white text-amber-700 flex items-center justify-center transition-all shrink-0 mt-1"><ArrowRight className="w-4 h-4 stroke-[2.5]" /></div></div>
             </div>
           )}
 

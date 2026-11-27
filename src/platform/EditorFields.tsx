@@ -20,12 +20,14 @@ export function MediaEditor({
   onChange,
   onBusy,
   imagesOnly = false,
+  maxImages = 8,
 }: {
   scope: string;
   value: Row;
   onChange: (patch: Row) => void;
   onBusy?: (busy: boolean) => void;
   imagesOnly?: boolean;
+  maxImages?: number;
 }) {
   const [busy, setBusy] = useState(false),
     [progress, setProgress] = useState(0),
@@ -75,7 +77,7 @@ export function MediaEditor({
     if (
       images.length +
         selected.filter((f) => f.type.startsWith("image/")).length >
-        (imagesOnly ? 1 : 8) ||
+        (imagesOnly ? 1 : maxImages) ||
       selected.filter((f) => f.type.startsWith("video/")).length +
         (value.videoUrl ? 1 : 0) >
         1
@@ -83,7 +85,7 @@ export function MediaEditor({
       setError(
         imagesOnly
           ? "Choose one profile photo."
-          : "Use up to eight images and one video.",
+          : `Use up to ${maxImages} images and one video.`,
       );
       return;
     }
@@ -129,7 +131,7 @@ export function MediaEditor({
       <p style={{ fontSize: 12 }}>
         {imagesOnly
           ? "Upload a clear photo for your profile."
-          : "Up to eight photos and one video. Drag to reorder, or use Move earlier / Move later."}
+          : `Up to ${maxImages} photos and one video. Drag to reorder, or use Move earlier / Move later.`}
       </p>
       <div className="a-upload-grid">
         {list.map((m: any, i: number) => (

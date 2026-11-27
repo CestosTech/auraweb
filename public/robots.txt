@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /orders
+Disallow: /messages
+Disallow: /notifications
+Disallow: /portal
+Disallow: /admin
+Disallow: /driver
+Disallow: /account
+Disallow: /work-profile
+Disallow: /live-payments
+Disallow: /api/
+
+Sitemap: https://auraliberia.com/sitemap.xml

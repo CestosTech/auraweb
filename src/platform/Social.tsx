@@ -12,6 +12,8 @@ import { useAuth } from "../context/AuthContext";
 import { command } from "../utils/commandApi";
 import { useRemote, friendly } from "./hooks";
 import { usePlatform, go } from "./context";
+import { auraShareUrl } from "./share";
+import { useSeo } from "./seo";
 import { Row, label, imageOf } from "./model";
 import {
   Button,
@@ -299,6 +301,48 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
   const op = useRef<{ key: string; text: string } | null>(null),
     r = detail.data?.item,
     own = !!user && r?.ownerUid === user.uid;
+  useSeo(
+    r
+      ? {
+          title: r.title,
+          description:
+            r.description ||
+            `${r.title}${r.organizerName ? ` by ${r.organizerName}` : ""} on Aura Liberia.`,
+          image: imageOf(r) || undefined,
+          url: `${location.origin}/${events ? "events" : "community"}/${encodeURIComponent(id)}`,
+          type: "article",
+          jsonLd: events
+            ? {
+                "@context": "https://schema.org",
+                "@type": "Event",
+                name: r.title,
+                description: r.description || r.title,
+                ...(imageOf(r) ? { image: [imageOf(r)] } : {}),
+                ...(r.startsAt
+                  ? { startDate: new Date(Number(r.startsAt)).toISOString() }
+                  : {}),
+                ...(r.endsAt
+                  ? { endDate: new Date(Number(r.endsAt)).toISOString() }
+                  : {}),
+                ...(r.venue
+                  ? {
+                      location: {
+                        "@type": "Place",
+                        name: r.venue,
+                      },
+                    }
+                  : {}),
+              }
+            : {
+                "@context": "https://schema.org",
+                "@type": "DiscussionForumPosting",
+                headline: r.title,
+                text: r.description || r.title,
+                ...(imageOf(r) ? { image: [imageOf(r)] } : {}),
+              },
+        }
+      : null,
+  );
   const act = async (action: string, body: Row, key?: string) => {
     if (!(await requireLogin())) return;
     setBusy(true);
@@ -377,10 +421,15 @@ function SocialDetail({ events, id }: { events: boolean; id: string }) {
           secondary
           onClick={async () => {
             try {
+              const url = await auraShareUrl(location.href);
               if (navigator.share)
-                await navigator.share({ title: r.title, url: location.href });
+                await navigator.share({
+                  title: r.title,
+                  text: r.description ? String(r.description).slice(0, 140) : r.title,
+                  url,
+                });
               else {
-                await navigator.clipboard.writeText(location.href);
+                await navigator.clipboard.writeText(url);
                 toast("Link copied");
               }
             } catch {}

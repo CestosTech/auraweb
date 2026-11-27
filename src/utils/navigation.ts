@@ -8,6 +8,7 @@ export type AppRoute =
   | { name: 'supermarket-management'; supermarketId: string }
   | { name: 'real-estate' }
   | { name: 'lifestyle' }
+  | { name: 'services' }
   | { name: 'motors' }
   | { name: 'admin' }
   | { name: 'restaurant'; restaurantId: string }
@@ -60,6 +61,8 @@ export function parseRoute(pathname: any, hash: any): AppRoute {
   if (cleanPath.startsWith('/rides')) {
     return { name: 'rides' };
   }
+
+  if (cleanPath.startsWith('/services')) return { name: 'services' };
 
   if (cleanPath.startsWith('/real-estate') || cleanPath.startsWith('/property') || cleanPath.startsWith('/rentals')) {
     return { name: 'real-estate' };
@@ -118,6 +121,8 @@ export function navigateTo(route: AppRoute) {
     url = '/real-estate';
   } else if (route.name === 'lifestyle') {
     url = '/lifestyle';
+  } else if (route.name === 'services') {
+    url = '/services';
   } else if (route.name === 'motors') {
     url = '/motors';
   } else if (route.name === 'supermarket') {

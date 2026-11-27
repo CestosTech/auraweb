@@ -2298,6 +2298,27 @@ a:focus-visible {
   flex-shrink: 0;
 }
 .a-services-page { max-width: 1160px; }
+.a-aura-points-card { background:linear-gradient(135deg,#17231c,#20392c 70%,#166a45);color:#fff;overflow:hidden; }
+.a-aura-points-card p { color:#d3e6da;max-width:620px; }
+.a-aura-points-head { display:flex;align-items:center;gap:12px; }
+.a-aura-points-head>span { width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:#ffffff1f;color:#c5f2d5;font-size:26px; }
+.a-aura-points-head small { color:#b4d8c1;font-size:10px;font-weight:800;letter-spacing:.14em; }
+.a-aura-points-head h2 { margin:2px 0 0;font-size:20px; }
+.a-aura-points-head>strong { margin-left:auto;font-size:32px;letter-spacing:-.04em; }
+.a-aura-points-periods { display:flex;gap:10px;margin:14px 0 16px; }
+.a-aura-points-periods span { display:grid;gap:4px;padding:9px 12px;border:1px solid #ffffff30;border-radius:12px;color:#d3e6da;font-size:12px; }
+.a-aura-points-periods b { color:#fff;font-size:14px; }
+.a-aura-points-card .a-button { background:#d8f5e3;color:#173322;border-color:transparent; }
+.a-aura-points-actions { display:flex;gap:10px;flex-wrap:wrap; }
+.a-aura-points-error { margin:12px 0 0;color:#ffe0dc!important;font-size:13px; }
+.a-aura-points-recent { margin-top:20px;padding-top:16px;border-top:1px solid #ffffff26; }
+.a-aura-points-recent h3 { margin:0 0 8px;color:#fff;font-size:15px; }
+.a-aura-points-entry { display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #ffffff18; }
+.a-aura-points-entry:last-child { border-bottom:0;padding-bottom:0; }
+.a-aura-points-entry>span { display:grid;gap:3px;min-width:0; }
+.a-aura-points-entry b { color:#fff;font-size:13px; }
+.a-aura-points-entry small { color:#b4d8c1;font-size:11px; }
+.a-aura-points-entry>strong { flex:none;color:#c5f2d5;font-size:13px; }
 .a-services-hero { padding: clamp(22px,4vw,46px); border: 1px solid var(--line); border-radius: 28px; background: radial-gradient(circle at 90% 12%,#dff5e9 0,transparent 34%),linear-gradient(140deg,#f1faf4,#fff 72%); overflow: hidden; }
 .a-shell[data-theme="dark"] .a-services-hero { background: radial-gradient(circle at 90% 12%,#203e2c 0,transparent 34%),#171d19; }
 .a-services-kicker { display:inline-flex;align-items:center;gap:7px;color:var(--green);font-weight:800;font-size:12px;letter-spacing:.12em; }
