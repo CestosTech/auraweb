@@ -72,14 +72,14 @@ export function Account() {
           onChange={(v) => setTheme(v as "light" | "dark")}
         />
       </section>
-      <div className="a-card">
+      <div className="a-section a-card">
         <h2>{user?.name || "Welcome to Aura"}</h2>
         <p>{user?.email}</p>
         {!user && <Button onClick={() => void requireLogin()}>Sign in</Button>}
       </div>
       {user && (
         <>
-          <section className="a-card a-aura-points-card">
+          <section className="a-section a-card a-aura-points-card">
             <div className="a-aura-points-head"><span>✦</span><div><small>AURA REWARDS</small><h2>Aura Points</h2></div><strong>{auraPoints.loading ? "…" : Number(auraPoints.data?.balance || 0).toLocaleString()}</strong></div>
             <p>Earn points when your posts are approved, friends visit from your invite, and your orders are fulfilled.</p>
             <div className="a-aura-points-periods"><span>This week <b>{Number(auraPoints.data?.weekPoints || 0)} pts</b></span><span>This month <b>{Number(auraPoints.data?.monthPoints || 0)} pts</b></span></div>
@@ -98,7 +98,7 @@ export function Account() {
               Edit delivery details
             </Button>
           </section>
-          <section className="a-card">
+          <section className="a-section a-card">
             <h3>Familiar food, wherever you go</h3>
             <p>
               Use your completed food orders to find similar meals at other
