@@ -105,6 +105,23 @@ self.addEventListener("fetch", (event) => {
                 await cache.delete(old.key);
                 await meta.delete(old.keyMeta);
               }
+            const metaKeys = await meta.keys();
+            const metaLimit = MEDIA_MAX_IMAGES + MEDIA_MAX_VIDEOS;
+            if (metaKeys.length > metaLimit) {
+              const metaRanked = await Promise.all(metaKeys.map(async (key) => {
+                const stamp = await meta.match(key);
+                return { key, time: stamp ? Number(await stamp.text()) : 0 };
+              }));
+              metaRanked.sort((a, b) => a.time - b.time);
+              const imageCache = await caches.open(MEDIA_IMAGE_CACHE);
+              const videoCache = await caches.open(MEDIA_VIDEO_CACHE);
+              for (const old of metaRanked.slice(0, metaKeys.length - metaLimit)) {
+                const mediaUrl = decodeURIComponent(new URL(old.key.url).pathname.slice(1));
+                await imageCache.delete(mediaUrl);
+                await videoCache.delete(mediaUrl);
+                await meta.delete(old.key);
+              }
+            }
             }
           } catch (_) { /* Storage may be full or unavailable; serve network. */ }
         })());
