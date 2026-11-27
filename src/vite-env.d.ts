@@ -1,0 +1,17 @@
+interface ImportMetaEnv {
+  readonly DEV: boolean;
+  readonly PROD: boolean;
+  readonly MODE: string;
+  readonly BASE_URL: string;
+  readonly SSR: boolean;
+  readonly [key: string]: string | boolean | undefined;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
+declare module "*.css" {
+  const src: string;
+  export default src;
+}
