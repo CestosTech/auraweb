@@ -14,6 +14,8 @@ import { command } from "../utils/commandApi";
 import { useAuth } from "../context/AuthContext";
 import { useRemote, friendly } from "./hooks";
 import { usePlatform, go } from "./context";
+import { auraShareUrl } from "./share";
+import { useSeo } from "./seo";
 import { Row, money, imageOf, nameOf, label } from "./model";
 import {
   Button,
@@ -332,6 +334,17 @@ function LiveRoom({ id }: { id: string }) {
     session = data?.session,
     isHost = data?.isHost === true,
     hostRef = useRef(isHost);
+  useSeo(
+    session
+      ? {
+          title: session.title,
+          description: `${session.title} — Live with ${session.merchantName || "Aura merchant"} on Aura Liberia.`,
+          image: session.thumbnail || data?.merchantImage || undefined,
+          url: `${location.origin}/live/${encodeURIComponent(id)}`,
+          type: "video.other",
+        }
+      : null,
+  );
   hostRef.current = isHost;
   useEffect(() => {
     if (!session || session.status === "ended") return;
@@ -518,9 +531,13 @@ function LiveRoom({ id }: { id: string }) {
           style={{ color: "white" }}
           onClick={async () => {
             try {
-              const url = location.href;
+              const url = await auraShareUrl(location.href);
               if (navigator.share)
-                await navigator.share({ title: session.title, url });
+                await navigator.share({
+                  title: session.title,
+                  text: `${session.title} — Live on Aura Liberia`,
+                  url,
+                });
               else {
                 await navigator.clipboard.writeText(url);
                 toast("Invitation link copied");
