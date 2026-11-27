@@ -648,23 +648,53 @@ function GuestTables({
 export function OrdersPage() {
   const { requireLogin } = usePlatform(),
     orders = useRemote("/v1/orders", undefined, 5000),
+    [filter, setFilter] = useState<"active" | "delivered" | "cancelled">("active"),
     [selected, setSelected] = useState<string | null>(
       new URLSearchParams(location.search).get("order"),
     );
   useEffect(() => {
     void requireLogin();
   }, []);
+  const allOrders = (orders.data?.orders || []) as Row[];
+  const bucket = (order: Row) => {
+    const status = String(order.status || "").toLowerCase().replace(/-/g, "_");
+    const stage = String(order.fulfillmentStage || "").toLowerCase().replace(/-/g, "_");
+    if (["cancelled", "canceled", "rejected"].includes(status) || ["cancelled", "canceled", "rejected"].includes(stage)) return "cancelled";
+    if (["delivered", "completed"].includes(status) || ["delivered", "completed"].includes(stage)) return "delivered";
+    return "active";
+  };
+  const counts = {
+    active: allOrders.filter((order) => bucket(order) === "active").length,
+    delivered: allOrders.filter((order) => bucket(order) === "delivered").length,
+    cancelled: allOrders.filter((order) => bucket(order) === "cancelled").length,
+  };
+  const visibleOrders = allOrders.filter((order) => bucket(order) === filter);
   return (
     <section className="a-page narrow">
       <span className="a-eyebrow">AT EVERY STEP</span>
       <h1>Your orders</h1>
+      <div className="a-chips a-order-filters" role="group" aria-label="Filter orders">
+        {(["active", "delivered", "cancelled"] as const).map((value) => (
+          <button
+            type="button"
+            key={value}
+            className={filter === value ? "active" : ""}
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+          >
+            {value === "cancelled" ? "Cancelled" : value[0].toUpperCase() + value.slice(1)} · {counts[value]}
+          </button>
+        ))}
+      </div>
       <Notice error={orders.error} retry={orders.reload} />
       {orders.loading ? (
         <Busy />
-      ) : !(orders.data?.orders || []).length ? (
+      ) : !allOrders.length ? (
         <Empty title="Your orders will appear here" />
+      ) : !visibleOrders.length ? (
+        <Empty title={`No ${filter} orders`} />
       ) : (
-        (orders.data?.orders || []).map((o: Row) => (
+        visibleOrders.map((o: Row) => (
           <button
             className="a-list-card"
             style={{ width: "100%", textAlign: "left" }}

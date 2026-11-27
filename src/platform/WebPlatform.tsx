@@ -65,7 +65,7 @@ export default function WebPlatform() {
   );
 }
 function Shell() {
-  const { user, logout } = useAuth(),
+  const { user, logout, syncCurrentUser } = useAuth(),
     [url, setUrl] = useState(location.pathname + location.search),
     [login, setLogin] = useState(false),
     [toast, setToast] = useState(""),
@@ -166,13 +166,19 @@ function Shell() {
       navigator.serviceWorker?.removeEventListener("message", push);
     };
   }, []);
-  const requireLogin = () =>
-    userRef.current
-      ? Promise.resolve(true)
-      : new Promise<boolean>((resolve) => {
+  const requireLogin = () => {
+    if (userRef.current) return Promise.resolve(true);
+    // Firebase can restore a verified session before React finishes hydrating
+    // the customer profile. Reuse that session instead of reopening sign-in.
+    if (auth.currentUser) {
+      syncCurrentUser();
+      return Promise.resolve(true);
+    }
+    return new Promise<boolean>((resolve) => {
           waiting.current.push(resolve);
           setLogin(true);
         });
+  };
   const ask = (title: string, message: string, action = "Continue") =>
     new Promise<boolean>((resolve) =>
       setConfirm({ title, message, action, resolve }),

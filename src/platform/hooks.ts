@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { command } from "../utils/commandApi";
 import { useAuth } from "../context/AuthContext";
+import { publicDataCache } from "../utils/publicDataCache";
 export function friendly(e: any) {
   if (e?.name === "AbortError" || e?.name === "TimeoutError")
     return "This is taking longer than expected. Please try again.";
@@ -42,6 +43,8 @@ export function useRemote<T = any>(
       identity.current = next;
     }
     setError(null);
+    const cacheKey = path ? publicDataCache.key(path, body, authenticated) : null;
+    const cachedPublic = cacheKey ? publicDataCache.read<T>(cacheKey) : Promise.resolve(null);
     const run = async () => {
       if (!path || (authenticated && !account)) {
         setLoading(false);
@@ -50,13 +53,25 @@ export function useRemote<T = any>(
       if (inFlight) return;
       inFlight = true;
       try {
+        // Paint a recent public response immediately, then refresh in the
+        // background. This also keeps public pages useful while offline.
+        const cached = await cachedPublic;
+        if (cached && alive && seq.current === generation) {
+          setData((current) => current ?? cached.value);
+          if (cached.fresh && version === 0 && !poll) return;
+        }
         const r = await command<T>(path, body, undefined, authenticated);
         if (alive && seq.current === generation) {
           setData(r);
           setError(null);
+          if (cacheKey) void publicDataCache.write(cacheKey, r);
         }
       } catch (e) {
-        if (alive && seq.current === generation) setError(friendly(e));
+        const cached = await cachedPublic;
+        if (alive && seq.current === generation) {
+          if (cached) setError(null);
+          else setError(friendly(e));
+        }
       } finally {
         inFlight = false;
         if (alive) setLoading(false);

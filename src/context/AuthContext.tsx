@@ -10,10 +10,11 @@ interface AuthContextType {
   loginWithPhone: (phone: string, name?: string, location?: string, address?: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   setUserDirectly: (user: AppUser | null) => void;
+  syncCurrentUser: () => void;
 }
 const AuthContext = createContext<AuthContextType>({ user: null,
   login: async () => ({ success: false }), loginWithPhone: async () => ({ success: false }),
-  logout: () => {}, setUserDirectly: () => {} });
+  logout: () => {}, setUserDirectly: () => {}, syncCurrentUser: () => {} });
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -46,8 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
   const login: AuthContextType['login'] = async () => ({ success: false, error: 'Continue with Google or Firebase phone verification.' });
   const logout = () => { setUser(null); localStorage.removeItem('aura_orders'); void signOut(auth); };
+  const syncCurrentUser = () => { if (auth.currentUser) void load(auth.currentUser); };
   return <AuthContext.Provider value={{ user, login,
     loginWithPhone: async () => ({ success: false, error: 'Use Firebase phone verification.' }), logout,
+    syncCurrentUser,
     // Legacy portal callers can request refresh, but cannot choose identity or role.
     setUserDirectly: value => { if (value === null) logout(); else void load(auth.currentUser); },
   }}>{children}</AuthContext.Provider>;
