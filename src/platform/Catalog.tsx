@@ -85,6 +85,8 @@ export function Catalog({ kind }: { kind: Kind }) {
     [basket, setBasket] = useState(false),
     [nearby, setNearby] = useState("");
   const manual = useRef(false);
+  const paginationSentinel = useRef<HTMLDivElement>(null);
+  const pagingRef = useRef(false);
   const familiar = useRemote(
     kind === "food" && merchant && user
       ? "/v1/food-recommendations?restaurantId=" + encodeURIComponent(merchant)
@@ -194,7 +196,10 @@ export function Catalog({ kind }: { kind: Kind }) {
     );
   }, [kind, shops.data]);
   const loadMore = async () => {
+    if (!cursor || pagingRef.current) return;
+    pagingRef.current = true;
     setBusy(true);
+    setError(null);
     try {
       const next = await command(
         `/v1/catalog/${catalogs[kind]}?pageToken=${encodeURIComponent(cursor!)}`,
@@ -209,9 +214,19 @@ export function Catalog({ kind }: { kind: Kind }) {
     } catch (e) {
       setError(friendly(e));
     } finally {
+      pagingRef.current = false;
       setBusy(false);
     }
   };
+  useEffect(() => {
+    const target = paginationSentinel.current;
+    if (!target || !cursor || busy) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) void loadMore();
+    }, { rootMargin: "700px 0px" });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [cursor, busy]);
   const dept = (r: Row) =>
     String(r.department || r.categoryLabel || r.category || "").toLowerCase();
   const filtered = items
@@ -575,9 +590,9 @@ export function Catalog({ kind }: { kind: Kind }) {
           </>
         )}
         {cursor && (
-          <div className="a-section">
+          <div className="a-section" ref={paginationSentinel}>
             <Button secondary disabled={busy} onClick={loadMore}>
-              {busy ? "Loading more..." : "Load more items"}
+              {busy ? "Loading more…" : "Load more items"}
             </Button>
           </div>
         )}

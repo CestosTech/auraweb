@@ -86,6 +86,7 @@ function GalleryVideo({ src }: { src: string }) {
         ref={ref}
         src={src}
         playsInline
+        preload="none"
         autoPlay
         muted={muted}
         loop

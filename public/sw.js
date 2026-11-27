@@ -1,5 +1,13 @@
 // AURA Monrovia Food Delivery Service Worker
 const CACHE_NAME = "aura-monrovia-v9-dev-safe";
+const MEDIA_IMAGE_CACHE = "aura-public-images-v1";
+const MEDIA_VIDEO_CACHE = "aura-public-videos-v1";
+const MEDIA_META_CACHE = "aura-public-media-meta-v1";
+const MEDIA_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
+const MEDIA_MAX_AGE_VIDEO_MS = 7 * 24 * 60 * 60 * 1000;
+const MEDIA_MAX_IMAGES = 240;
+const MEDIA_MAX_VIDEOS = 12;
+const MAX_CACHEABLE_VIDEO_BYTES = 8 * 1024 * 1024;
 const LOCAL_DEVELOPMENT = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
 const STATIC_ASSETS = [
   "/",
@@ -50,6 +58,65 @@ self.addEventListener("fetch", (event) => {
   if (LOCAL_DEVELOPMENT) return;
   const url = event.request.url;
   const parsed = new URL(url);
+  if (!url.startsWith("http://") && !url.startsWith("https://")) return;
+  if (event.request.method !== "GET" || event.request.headers.has("Authorization")) return;
+
+  // Public media only. Never persist chat attachments, receipts, API responses,
+  // or range-based video fragments. Public media URLs should change on upload.
+  const isPublicMediaPath = !/(?:\/v1\/|\/api\/|chat|receipt|private|identity|avatar-upload)/i.test(parsed.pathname);
+  const imageRequest = event.request.destination === "image";
+  const videoRequest = event.request.destination === "video";
+  if (isPublicMediaPath && (imageRequest || videoRequest)) {
+    if (videoRequest && event.request.headers.has("Range")) return;
+    const maxEntries = imageRequest ? MEDIA_MAX_IMAGES : MEDIA_MAX_VIDEOS;
+    const maxAge = imageRequest ? MEDIA_MAX_AGE_MS : MEDIA_MAX_AGE_VIDEO_MS;
+    const metaKey = new Request(`https://aura-cache-meta.invalid/${encodeURIComponent(url)}`);
+    event.respondWith((async () => {
+      const cache = await caches.open(imageRequest ? MEDIA_IMAGE_CACHE : MEDIA_VIDEO_CACHE);
+      const meta = await caches.open(MEDIA_META_CACHE);
+      const cached = await cache.match(event.request);
+      if (cached) {
+        const stamp = await meta.match(metaKey);
+        const savedAt = stamp ? Number(await stamp.text()) : 0;
+        if (savedAt && Date.now() - savedAt < maxAge) return cached;
+        await cache.delete(event.request);
+        await meta.delete(metaKey);
+      }
+      try {
+        const response = await fetch(event.request);
+        if (!response || (response.type !== "opaque" && !response.ok)) return response;
+        if (videoRequest) {
+          const length = Number(response.headers.get("content-length") || 0);
+          if (response.status !== 200 || !length || length > MAX_CACHEABLE_VIDEO_BYTES) return response;
+        }
+        event.waitUntil((async () => {
+          try {
+            await cache.put(event.request, response.clone());
+            await meta.put(metaKey, new Response(String(Date.now())));
+            const keys = await cache.keys();
+            if (keys.length > maxEntries) {
+              const ranked = await Promise.all(keys.map(async (key) => {
+                const keyMeta = new Request(`https://aura-cache-meta.invalid/${encodeURIComponent(key.url)}`);
+                const value = await meta.match(keyMeta);
+                return { key, keyMeta, time: value ? Number(await value.text()) : 0 };
+              }));
+              ranked.sort((a, b) => a.time - b.time);
+              for (const old of ranked.slice(0, keys.length - maxEntries)) {
+                await cache.delete(old.key);
+                await meta.delete(old.keyMeta);
+              }
+            }
+          } catch (_) { /* Storage may be full or unavailable; serve network. */ }
+        })());
+        return response;
+      } catch (error) {
+        if (cached) return cached;
+        throw error;
+      }
+    })());
+    return;
+  }
+
   if (
     parsed.origin !== self.location.origin ||
     /^\/(?:@|src\/|node_modules\/|__vite)/.test(parsed.pathname) ||
@@ -57,11 +124,6 @@ self.addEventListener("fetch", (event) => {
     event.request.headers.has("Authorization")
   )
     return;
-
-  // Only handle HTTP/HTTPS GET requests; ignore chrome-extension://, moz-extension://, etc.
-  if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    return;
-  }
 
   // Bypass service worker for Firebase, Google APIs, Twilio, and API routes
   if (

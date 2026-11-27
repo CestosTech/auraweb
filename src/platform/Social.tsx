@@ -54,6 +54,8 @@ export function Social({
     [next, setNext] = useState<string | null>(null),
     [paging, setPaging] = useState(false),
     [pageError, setPageError] = useState<string | null>(null),
+    loadMoreRef = useRef<HTMLDivElement>(null),
+    pagingRef = useRef(false),
     feed = useRemote(
       tab === "Mine"
         ? base + "/mine"
@@ -74,6 +76,25 @@ export function Social({
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     } catch {}
   }, [tab]);
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !next || paging || pageError || !["Explore", "Saved"].includes(tab)) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting || pagingRef.current) return;
+      pagingRef.current = true;
+      setPaging(true);
+      setPageError(null);
+      void command(base + "?after=" + encodeURIComponent(next), undefined, undefined, false)
+        .then((page) => {
+          setExtra((old) => [...old, ...(page.items || [])]);
+          setNext(page.nextCursor ?? null);
+        })
+        .catch((e) => setPageError(friendly(e)))
+        .finally(() => { pagingRef.current = false; setPaging(false); });
+    }, { rootMargin: "500px 0px" });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [base, next, paging, pageError, tab]);
   if (id) return <SocialDetail key={id} events={events} id={id} />;
   const categories = [
     ...new Set<string>(
@@ -212,29 +233,18 @@ export function Social({
       )}
       <Notice error={pageError} />
       {next && ["Explore", "Saved"].includes(tab) && (
-        <Button
-          secondary
-          disabled={paging}
-          onClick={async () => {
+        <div ref={loadMoreRef} style={{ minHeight: 52, display: "grid", placeItems: "center" }}>
+          <Button secondary disabled={paging} onClick={() => {
+            if (paging || pagingRef.current) return;
+            pagingRef.current = true;
+            setPageError(null);
             setPaging(true);
-            try {
-              const page = await command(
-                base + "?after=" + encodeURIComponent(next),
-                undefined,
-                undefined,
-                false,
-              );
-              setExtra((old) => [...old, ...page.items]);
-              setNext(page.nextCursor ?? null);
-            } catch (e) {
-              setPageError(friendly(e));
-            } finally {
-              setPaging(false);
-            }
-          }}
-        >
-          {paging ? "Loading..." : "Load more"}
-        </Button>
+            void command(base + "?after=" + encodeURIComponent(next), undefined, undefined, false)
+              .then((page) => { setExtra((old) => [...old, ...(page.items || [])]); setNext(page.nextCursor ?? null); })
+              .catch((e) => setPageError(friendly(e)))
+              .finally(() => { pagingRef.current = false; setPaging(false); });
+          }}>{paging ? "Loading…" : pageError ? "Retry loading more" : "Load more"}</Button>
+        </div>
       )}
       {filterOpen && (
         <Dialog title="Category" onClose={() => setFilterOpen(false)}>
